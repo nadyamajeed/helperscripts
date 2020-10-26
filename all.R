@@ -1,4 +1,5 @@
 library(dplyr)
+options(scipen = 999)
 
 
 
