@@ -38,7 +38,7 @@ rma.mv_table <- function(rma.mv.output, special_rowname = FALSE) {
 
   res <- data.frame(
     n = rma.mv.output[["s.nlevels"]][1], k = rma.mv.output[["s.nlevels"]][2],
-    g = round5(rma.mv.output$b), se = round5(rma.mv.output$se),
+    effectsize = round5(rma.mv.output$b), se = round5(rma.mv.output$se),
     zval = round5(rma.mv.output$zval), pval = round5(rma.mv.output$pval),
     sig = sigstars(rma.mv.output$pval),
     ci.lb = round5(rma.mv.output$ci.lb), ci.ub = round5(rma.mv.output$ci.ub))
