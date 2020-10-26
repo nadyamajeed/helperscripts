@@ -34,7 +34,7 @@ summary_and_forest <- function(rma.mv.output, xlab = "Effect size", specific_lab
 
 
 
-rma.mv_table <- function(rma.mv.output) {
+rma.mv_table <- function(rma.mv.output, special_rowname = FALSE) {
 
   res <- data.frame(
     n = rma.mv.output[["s.nlevels"]][1], k = rma.mv.output[["s.nlevels"]][2],
@@ -42,7 +42,9 @@ rma.mv_table <- function(rma.mv.output) {
     zval = round5(rma.mv.output$zval), pval = round5(rma.mv.output$pval),
     sig = sigstars(rma.mv.output$pval),
     ci.lb = round5(rma.mv.output$ci.lb), ci.ub = round5(rma.mv.output$ci.ub))
-  rownames(res) <- NULL
+  
+  if(special_rowname == FALSE){rownames(res) <- NULL}
+  else{rownames(res) <- special_rowname}
 
   return(res)
 }
