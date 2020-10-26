@@ -21,15 +21,15 @@ funnel_and_ranktest <- function(metafor.output, legend = TRUE, xlab = "Effect si
 
 
 
-summary_and_forest <- function(rma.mv.output, xlab = "Effect size", specific_label = "") {
+summary_and_forest <- function(metafor.output, xlab = "Effect size", specific_label = "") {
 
   mlab = "Overall effect size"
   if(specific_label != "") {mlab = paste0("Overall effect size for ", specific_label)}
 
-  forest(rma.mv.output, top = 1, xlab = xlab,
+  forest(metafor.output, top = 1, xlab = xlab,
          mlab = mlab)
 
-  summary(rma.mv.output)
+  summary(metafor.output)
 }
 
 
