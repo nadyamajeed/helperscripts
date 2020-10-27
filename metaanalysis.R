@@ -44,7 +44,7 @@ rma.mv_table <- function(rma.mv.output, special_rowname = FALSE, debug = FALSE) 
   res_compiled <- data.frame()
   
   # loop through each estimate
-  for(i in estimate_counts) {
+  for(i in 1:estimate_counts) {
     
     # store extracted values in single-row dataframe
     res_row <- data.frame(
