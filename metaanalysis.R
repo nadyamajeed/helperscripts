@@ -74,5 +74,5 @@ rma.mv_table <- function(rma.mv.output, special_rowname = FALSE, debug = FALSE) 
     }
   }
 
-  return(res)
+  return(res_compiled)
 }
