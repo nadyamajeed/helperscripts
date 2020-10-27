@@ -21,7 +21,7 @@ funnel_and_ranktest <- function(metafor.output, legend = TRUE, xlab = "Effect si
 
 
 
-rma.mv_table <- function(rma.mv.output, special_rowname = FALSE) {
+rma.mv_table <- function(rma.mv.output, special_rowname = "") {
 
   # count how many estimates (intercept and slopes) have been computed
   # if more than 1 (i.e., there are slopes) STOP the function
@@ -38,7 +38,7 @@ rma.mv_table <- function(rma.mv.output, special_rowname = FALSE) {
     ci.lb = round5(rma.mv.output$ci.lb), ci.ub = round5(rma.mv.output$ci.ub))
   
   # set rowname
-  if(special_rowname == FALSE){rownames(res) <- NULL}
+  if(special_rowname == ""){rownames(res) <- NULL}
   else{rownames(res) <- special_rowname}
 
   # return formatted row
@@ -55,6 +55,9 @@ summary_and_forest <- function(metafor.output, xlab = "Effect size", specific_la
   forest(metafor.output, top = 1, xlab = xlab,
          mlab = mlab)
 
-  if(compressed_summary) {rma.mv_table(metafor.output)}
-  else {summary(metafor.output)}
+  if(compressed_summary) {out <- rma.mv_table(metafor.output, special_rowname = specific_label)}
+  else {out <- summary(metafor.output)}
+  
+  print(out)
+  return(out)
 }
