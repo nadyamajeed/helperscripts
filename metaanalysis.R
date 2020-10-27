@@ -57,7 +57,6 @@ summary_and_forest <- function(metafor.output, xlab = "Effect size", specific_la
 
   if(compressed_summary) {out <- rma.mv_table(metafor.output, special_rowname = specific_label)}
   else {out <- summary(metafor.output)}
-  
-  print(out)
+
   return(out)
 }
