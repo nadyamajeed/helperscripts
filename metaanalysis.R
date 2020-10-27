@@ -58,7 +58,7 @@ rma.mv_table <- function(rma.mv.output, special_rowname = FALSE, debug = FALSE) 
     if(debug) {print(res_row)}
     
     # bind with master dataframe
-    rbind(res_compiled, res_row)
+    res_compiled <- rbind(res_compiled, res_row)
     
   }
   
