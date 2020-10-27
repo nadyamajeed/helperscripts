@@ -34,10 +34,11 @@ summary_and_forest <- function(metafor.output, xlab = "Effect size", specific_la
 
 
 
-rma.mv_table <- function(rma.mv.output, special_rowname = FALSE) {
+rma.mv_table <- function(rma.mv.output, special_rowname = FALSE, debug = FALSE) {
 
   # count how many estimates (intercept and slopes) have been computed
   estimate_counts <- length(rma.mv.output$b)
+  if(debug) {print(estimate_counts)}
   
   # initialise empty dataframe to collect each row
   res_compiled <- data.frame()
@@ -52,6 +53,9 @@ rma.mv_table <- function(rma.mv.output, special_rowname = FALSE) {
       zval = round5(rma.mv.output$zval[i]), pval = round5(rma.mv.output$pval[i]),
       sig = sigstars(rma.mv.output$pval[i]),
       ci.lb = round5(rma.mv.output$ci.lb[i]), ci.ub = round5(rma.mv.output$ci.ub[i]))
+    
+    # if debugger enabled, print this row
+    if(debug) {print(res_row)}
     
     # bind with master dataframe
     rbind(res_compiled, res_row)
