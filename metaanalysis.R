@@ -1,6 +1,16 @@
 library(devtools)
 source_url("https://raw.githubusercontent.com/nadyaeiou/nadyasscripts/main/all.R")
 
+##########
+
+cat("\n####################")
+cat("\nLoading Nadya's meta-analysis upgrades from Github.")
+cat("\nPackage(s): metafor")
+
+starttime <- Sys.time()
+
+##########
+
 
 
 library(metafor)
@@ -60,3 +70,15 @@ summary_and_forest <- function(metafor.output, xlab = "Effect size", specific_la
 
   return(out)
 }
+
+
+
+##########
+
+endtime <- Sys.time()
+cat("\nFinished loading Nadya's meta-analysis upgrades.")
+cat("\nTime taken:", (endtime - starttime))
+cat("\n####################")
+cat("\n")
+
+rm(starttime); rm(endtime)
