@@ -2,6 +2,7 @@ cat("\n####################")
 cat("\nLoading Nadya's functions and other QOL upgrades from Github.")
 cat("\nPackage(s): dplyr")
 cat("\nOption(s) : Prevent scientific notation.")
+cat("\n")
 
 starttime <- Sys.time()
 
