@@ -1,3 +1,14 @@
+cat("\n####################")
+cat("\nLoading Nadya's functions and other QOL upgrades from Github.")
+cat("\nPackage(s): dplyr")
+cat("\nOption(s) : Prevent scientific notation.")
+
+starttime <- Sys.time()
+
+##########
+
+
+
 library(dplyr)
 options(scipen = 9999)
 
@@ -48,3 +59,14 @@ dS <- function(varname, label = FALSE, dummy = FALSE) {
   if(label != FALSE) {rownames(out) <- label}
   return(out)
 }
+
+
+
+##########
+
+endtime <- Sys.time()
+cat("\nFinished loading Nadya's QOL upgrades.")
+cat("\nTime taken:", (endtime - starttime))
+cat("\n####################")
+
+rm(starttime); rm(endtime)
