@@ -28,7 +28,7 @@ dS <- function(varname, categorical = FALSE) {
     yes = sum(varname == 1, na.rm=T)
     no = sum(varname == 0, na.rm=T)
     percentage = round4(yes / (yes + no))
-    return(data.frame('n' = n, '%' = percentage))
+    return(data.frame('n' = n, 'percentage' = percentage))
   }
   
   else {
