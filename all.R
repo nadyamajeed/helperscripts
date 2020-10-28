@@ -20,17 +20,17 @@ sigstars <- function(pval) {
 
 
 
-dS <- function(varname, categorical = FALSE) {
+dS <- function(varname, label = FALSE, dummy = FALSE) {
   
   n = sum(!is.na(varname))
   
-  if(categorical) {
+  if(dummy) {
     yes = sum(varname == 1, na.rm=T)
     no = sum(varname == 0, na.rm=T)
-    if(yes==0 & no==0) {stop("\nCategorical variables should be coded in 0/1. Neither found.\n")}
+    if(yes==0 & no==0) {stop("\nCategorical variables should be dummy-coded in 0/1. Neither found.\n")}
     else {
       percentage = round4(yes / (yes + no))
-      return(data.frame('n' = n, 'percentage' = percentage))
+      out <- data.frame('n' = n, 'percentage' = percentage)
     }
   }
   
@@ -41,8 +41,10 @@ dS <- function(varname, categorical = FALSE) {
       sd = sd(varname, na.rm=T) %>% round2()
       min = min(varname, na.rm=T) %>% round2()
       max = max(varname, na.rm=T) %>% round2()
-      return(data.frame('n' = n, 'm' = m, 'sd' = sd, 'min' = min, 'max' = max))
+      out <- data.frame('n' = n, 'm' = m, 'sd' = sd, 'min' = min, 'max' = max)
     }
   }
  
+  if(label) {rownames(out) <- label}
+  return(out)
 }
