@@ -27,16 +27,22 @@ dS <- function(varname, categorical = FALSE) {
   if(categorical) {
     yes = sum(varname == 1, na.rm=T)
     no = sum(varname == 0, na.rm=T)
-    percentage = round4(yes / (yes + no))
-    return(data.frame('n' = n, 'percentage' = percentage))
+    if(yes==0 & no==0) {stop("\nCategorical variables should be coded in 0/1. Neither found.\n")}
+    else {
+      percentage = round4(yes / (yes + no))
+      return(data.frame('n' = n, 'percentage' = percentage))
+    }
   }
   
   else {
-    m = mean(varname, na.rm=T) %>% round2()
-    sd = sd(varname, na.rm=T) %>% round2()
-    min = min(varname, na.rm=T) %>% round2()
-    max = max(varname, na.rm=T) %>% round2()
-    return(data.frame('n' = n, 'm' = m, 'sd' = sd, 'min' = min, 'max' = max))
+    if(class(varname) %>% !is.numeric()) {stop("\nVariable is not numeric.\nPlease convert the variable, check the variable name, or set categorical = TRUE to compute descriptives for (dummy-coded) categorical variables.\n")}
+    else {
+      m = mean(varname, na.rm=T) %>% round2()
+      sd = sd(varname, na.rm=T) %>% round2()
+      min = min(varname, na.rm=T) %>% round2()
+      max = max(varname, na.rm=T) %>% round2()
+      return(data.frame('n' = n, 'm' = m, 'sd' = sd, 'min' = min, 'max' = max))
+    }
   }
  
 }
