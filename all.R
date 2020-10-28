@@ -1,8 +1,11 @@
 library(dplyr)
-options(scipen = 999)
+options(scipen = 9999)
 
 
 
+round2 <- function(thing_to_round) {return(round(thing_to_round, 2))}
+round3 <- function(thing_to_round) {return(round(thing_to_round, 3))}
+round4 <- function(thing_to_round) {return(round(thing_to_round, 4))}
 round5 <- function(thing_to_round) {return(round(thing_to_round, 5))}
 
 
@@ -13,4 +16,27 @@ sigstars <- function(pval) {
       pval < .01, "**", ifelse(
         pval < .05, "*", "")))
   return(stars)
+}
+
+
+
+dS <- function(varname, categorical = FALSE) {
+  
+  n = sum(!is.na(varname))
+  
+  if(categorical) {
+    yes = sum(varname == 1, na.rm=T)
+    no = sum(varname == 0, na.rm=T)
+    percentage = round4(yes / (yes + no))
+    return(data.frame('n' = n, '%' = percentage))
+  }
+  
+  else {
+    m = mean(varname, na.rm=T) %>% round2()
+    sd = sd(varname, na.rm=T) %>% round2()
+    min = min(varname, na.rm=T) %>% round2()
+    max = max(varname, na.rm=T) %>% round2()
+    return(data.frame('n' = n, 'm' = m, 'sd' = sd, 'min' = min, 'max' = max))
+  }
+ 
 }
