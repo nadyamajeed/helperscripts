@@ -45,6 +45,6 @@ dS <- function(varname, label = FALSE, dummy = FALSE) {
     }
   }
  
-  if(label) {rownames(out) <- label}
+  if(label != FALSE) {rownames(out) <- label}
   return(out)
 }
