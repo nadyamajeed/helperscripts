@@ -33,7 +33,7 @@ n.lavaan <- function(model_in, cfa_or_sem, data, show_output = TRUE) {
   
   if(show_output) {summary(out, standardized = TRUE, fit.measures = TRUE)}
   endtime <- Sys.time()
-  cat("\n----------\nn.lavaan duration:", starttime - endtime, "\n")
+  cat("\n----------\nn.lavaan duration:", endtime - starttime, "\n")
   return(out)
 }
 
@@ -55,7 +55,7 @@ n.bsem <- function(
   
   if(show_output) {summary(out, standardized = TRUE, fit.measures = TRUE)}
   endtime <- Sys.time()
-  cat("\n----------\nn.bsem duration:", starttime - endtime, "\n")
+  cat("\n----------\nn.bsem duration:", endtime - starttime, "\n")
   return(out)
 }
 
