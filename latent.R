@@ -20,6 +20,7 @@ library(lavaan); library(lavaanPlot); library(blavaan); library(tibble)
 
 n.lavaan <- function(model_in, cfa_or_sem, data, show_output = TRUE) {
   if(!is.character(model_in)) {stop("\nPass in a model that lavaan can read.\n")}
+  starttime <- Sys.time()
   
   if(cfa_or_sem=="cfa") {out <- model_in %>% cfa(data = data, missing = "fiml", mimic = "Mplus")}
   if(cfa_or_sem=="sem") {out <- model_in %>% sem(data = data, missing = "fiml", mimic = "Mplus")}
@@ -31,6 +32,8 @@ n.lavaan <- function(model_in, cfa_or_sem, data, show_output = TRUE) {
     print()
   
   if(show_output) {summary(out, standardized = TRUE, fit.measures = TRUE)}
+  starttime <- Sys.time()
+  cat("\n----------\nn.lavaan duration:", starttime - endtime, "\n")
   return(out)
 }
 
@@ -41,6 +44,7 @@ n.bsem <- function(
   bayesian_cores = 1, bayesian_n.chains = 5, bayesian_burnin = 1000, bayesian_sample = 5000
 ) {
   if(!is.character(model_in)) {stop("\nPass in a model that lavaan can read.\n")}
+  starttime <- Sys.time()
   
   out <-
     model_in %>% bsem(
@@ -50,6 +54,8 @@ n.bsem <- function(
     )
   
   if(show_output) {summary(out, standardized = TRUE, fit.measures = TRUE)}
+  starttime <- Sys.time()
+  cat("\n----------\nn.bsem duration:", starttime - endtime, "\n")
   return(out)
 }
 
