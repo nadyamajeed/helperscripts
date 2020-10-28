@@ -6,6 +6,7 @@ source_url("https://raw.githubusercontent.com/nadyaeiou/nadyasscripts/main/all.R
 cat("\n####################")
 cat("\nLoading Nadya's meta-analysis upgrades from Github.")
 cat("\nPackage(s): metafor")
+cat("\n")
 
 starttime <- Sys.time()
 
