@@ -61,6 +61,15 @@ n.bsem <- function(
 
 
 
+n.bcompare <- function(bresult1, bresult2) {
+  starttime <- Sys.time()
+  blavCompare(bresult1, bresult2)
+  endtime <- Sys.time()
+  cat("\n--------------------\nTime taken for model comparison:", (endtime - starttime), "\n--------------------\n")
+}
+
+
+
 ##########
 
 endtime <- Sys.time()
