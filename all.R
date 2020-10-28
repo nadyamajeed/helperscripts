@@ -68,5 +68,6 @@ endtime <- Sys.time()
 cat("\nFinished loading Nadya's QOL upgrades.")
 cat("\nTime taken:", (endtime - starttime))
 cat("\n####################")
+cat("\n")
 
 rm(starttime); rm(endtime)
