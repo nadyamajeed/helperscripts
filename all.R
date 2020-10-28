@@ -35,7 +35,7 @@ dS <- function(varname, categorical = FALSE) {
   }
   
   else {
-    if(class(varname) %>% !is.numeric()) {stop("\nVariable is not numeric.\nPlease convert the variable, check the variable name, or set categorical = TRUE to compute descriptives for (dummy-coded) categorical variables.\n")}
+    if(!is.numeric(varname)) {stop("\nVariable is not numeric.\nPlease convert the variable, check the variable name, or set categorical = TRUE to compute descriptives for (dummy-coded) categorical variables.\n")}
     else {
       m = mean(varname, na.rm=T) %>% round2()
       sd = sd(varname, na.rm=T) %>% round2()
