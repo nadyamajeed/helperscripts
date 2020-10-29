@@ -61,6 +61,27 @@ n.bsem <- function(
 
 
 
+n.bsem.singlecore <- function(
+  model_in, data, show_output = TRUE,
+  bayesian_n.chains = 5, bayesian_burnin = 1000, bayesian_sample = 5000
+) {
+  if(!is.character(model_in)) {stop("\nPass in a model that lavaan can read.\n")}
+  starttime <- Sys.time()
+  
+  out <-
+    model_in %>% bsem(
+      data = data, mimic = "Mplus",
+      n.chains = bayesian_n.chains, burnin = bayesian_burnin, sample = bayesian_sample
+    )
+  
+  if(show_output) {summary(out, standardized = TRUE, fit.measures = TRUE)}
+  endtime <- Sys.time()
+  cat("\n----------\nn.bsem duration:", endtime - starttime, "\n")
+  return(out)
+}
+
+
+
 n.bcompare <- function(bresult1, bresult2) {
   starttime <- Sys.time()
   blavCompare(bresult1, bresult2)
