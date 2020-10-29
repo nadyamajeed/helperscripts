@@ -76,7 +76,7 @@ n.bsem.singlecore <- function(
   
   if(show_output) {summary(out, standardized = TRUE, fit.measures = TRUE)}
   endtime <- Sys.time()
-  cat("\n----------\nn.bsem duration:", endtime - starttime, "\n")
+  cat("\n----------\nn.bsem.singlecore duration:", endtime - starttime, "\n")
   return(out)
 }
 
