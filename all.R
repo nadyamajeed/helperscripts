@@ -15,14 +15,21 @@ options(scipen = 9999)
 
 
 
-round2 <- function(thing_to_round) {return(round(thing_to_round, 2))}
-round3 <- function(thing_to_round) {return(round(thing_to_round, 3))}
-round4 <- function(thing_to_round) {return(round(thing_to_round, 4))}
-round5 <- function(thing_to_round) {return(round(thing_to_round, 5))}
+roundx <- function(thing_to_round, dp, force = FALSE) {
+  if(!is.logical(force)) stop("'force' must be set to TRUE or FALSE (default FALSE).")
+  number <- round(as.numeric(thing_to_round), as.numeric(dp))
+  if(force) {number <- format(number, nsmall = dp)}
+  return(number)
+}
+round2 <- function(thing_to_round, force = FALSE) {return(roundx(thing_to_round, 2, force = force)}
+round3 <- function(thing_to_round, force = FALSE) {return(roundx(thing_to_round, 3, force = force)}
+round4 <- function(thing_to_round, force = FALSE) {return(roundx(thing_to_round, 4, force = force)}
+round5 <- function(thing_to_round, force = FALSE) {return(roundx(thing_to_round, 5, force = force)}
 
 
 
 sigstars <- function(pval) {
+  pval <- as.numeric(pval)
   stars <- ifelse(
     pval < .001, "***", ifelse(
       pval < .01, "**", ifelse(
