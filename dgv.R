@@ -1,8 +1,8 @@
 g_multiplier <- function(n1, n2) {
   # multiplier to convert d to g
   # taken from metafor package
-  thing = n1 + n2 - 2
-  corrector = exp(lgamma(thing/2) - log(sqrt(thing/2)) - lgamma((thing-1)/2))
+  degfreedom = n1 + n2 - 2
+  corrector = exp(lgamma(degfreedom/2) - log(sqrt(degfreedom/2)) - lgamma((degfreedom-1)/2))
   return(corrector)
 }
 
