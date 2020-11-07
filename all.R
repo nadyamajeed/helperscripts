@@ -21,10 +21,10 @@ roundx <- function(thing_to_round, dp, force = FALSE) {
   if(force) {number <- format(number, nsmall = dp)}
   return(number)
 }
-round2 <- function(thing_to_round, force = FALSE) {return(roundx(thing_to_round, 2, force = force)}
-round3 <- function(thing_to_round, force = FALSE) {return(roundx(thing_to_round, 3, force = force)}
-round4 <- function(thing_to_round, force = FALSE) {return(roundx(thing_to_round, 4, force = force)}
-round5 <- function(thing_to_round, force = FALSE) {return(roundx(thing_to_round, 5, force = force)}
+round2 <- function(thing_to_round, force = FALSE) {return(roundx(thing_to_round, 2, force = force))}
+round3 <- function(thing_to_round, force = FALSE) {return(roundx(thing_to_round, 3, force = force))}
+round4 <- function(thing_to_round, force = FALSE) {return(roundx(thing_to_round, 4, force = force))}
+round5 <- function(thing_to_round, force = FALSE) {return(roundx(thing_to_round, 5, force = force))}
 
 
 
