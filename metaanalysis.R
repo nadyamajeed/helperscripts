@@ -32,26 +32,45 @@ funnel_and_ranktest <- function(metafor.output, legend = TRUE, xlab = "Effect si
 
 
 
-rma.mv_table <- function(rma.mv.output, special_rowname = "") {
-
+rma.mv_table <- function(rma.mv.output, special_rowname = "", continuous = FALSE) {
+  
   # count how many estimates (intercept and slopes) have been computed
-  # if more than 1 (i.e., there are slopes) STOP the function
-  if(length(rma.mv.output$b) > 1) {
-    stop("This function is meant for intercept-only models. For models with slopes (moderators), please use summary() to ensure you get full information.")
+  # if more than 1 (i.e., there are slopes) and continuous == FALSE, STOP the function
+  if(length(rma.mv.output$b) > 1 & continuous == FALSE) {
+    stop("This function is meant for intercept-only models.\nFor models with slopes (moderators), please ensure you have set continuous = TRUE,\nor use summary() to ensure you get full information.")
   }
   
-  # conduct data extraction
-  res <- data.frame(
-    n = rma.mv.output[["s.nlevels"]][1], k = rma.mv.output[["s.nlevels"]][2],
-    effectsize = round5(rma.mv.output$b), se = round5(rma.mv.output$se),
-    zval = round5(rma.mv.output$zval), pval = round5(rma.mv.output$pval),
-    sig = sigstars(rma.mv.output$pval),
-    ci.lb = round5(rma.mv.output$ci.lb), ci.ub = round5(rma.mv.output$ci.ub))
+  # for intercept-only models (no mods)
+  if(!continuous) {
+    # conduct data extraction
+    res <- data.frame(
+      'n' = rma.mv.output[["s.nlevels"]][1], 'k' = rma.mv.output[["s.nlevels"]][2],
+      'effectsize' = round5(rma.mv.output$b), 'se' = round5(rma.mv.output$se),
+      'zval' = round5(rma.mv.output$zval), 'pval' = round3(rma.mv.output$pval, force = TRUE),
+      'sig' = sigstars(rma.mv.output$pval),
+      'ci.lb' = round5(rma.mv.output$ci.lb), 'ci.ub' = round5(rma.mv.output$ci.ub)
+      )
+  }
+  
+  # for slope models (with mods) -- ONLY ONE SLOPE
+  if(continuous) {
+    # stop function if more than one slope
+    if(length(rma.mv.output$b) > 2) {
+      stop("This function is meant for models with only one slope (moderator). For models with multiple moderators, please use summary() to ensure you get full information.")
+    }
+    # conduct data extraction
+    res <- data.frame(
+      'n' = rma.mv.output[["s.nlevels"]][1], 'k' = rma.mv.output[["s.nlevels"]][2],
+      'Q' = paste0(round2(rma.mv.output[["QM"]], force = TRUE), sigstars(rma.mv.output[["QMp"]])),
+      'b' = round4(rma.mv.output[["b"]][2]), 'SEb' = round4(rma.mv.output[["se"]][2]),
+      'CI' = paste0("[", round4(rma.mv.output[["ci.lb"]][2]), ", ", round4(rma.mv.output[["ci.ub"]][2]), "]")
+      )
+  }
   
   # set rowname
   if(special_rowname == ""){rownames(res) <- NULL}
   else{rownames(res) <- special_rowname}
-
+  
   # return formatted row
   return(res)
 }
