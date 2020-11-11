@@ -72,9 +72,10 @@ dS <- function(varname, label = FALSE, dummy = FALSE) {
 
 summary.t <- function(t.test.output) {
   if(class(t.test.output) != "htest") stop("Needs output from t.test() function.")
-  attach(t.test.output)
-  res.t <- paste0("t(", parameter, ") = ", round2(statistic, force = TRUE), ", p = ", round3(p.value, force = TRUE))
-  detach(t.test.output)
+  degrees_of_freedom = t.test.output$parameter
+  t_statistic = t.test.output$statistic
+  p_value = t.test.output$p.value
+  res.t <- paste0("t(", degrees_of_freedom, ") = ", round2(t_statistic, force = TRUE), ", p = ", round3(p_value, force = TRUE))
   return(res.t)
 }
 
