@@ -63,9 +63,18 @@ dS <- function(varname, label = FALSE, dummy = FALSE) {
       out <- data.frame('n' = n, 'm' = m, 'sd' = sd, 'min' = min, 'max' = max)
     }
   }
- 
+  
   if(label != FALSE) {rownames(out) <- label}
   return(out)
+}
+
+
+
+summary.t <- function(t.test.output) {
+  attach(t.test.output)
+  res.t <- paste0("t(", parameter, ") = ", round2(statistic, force = TRUE), ", p = ", round3(p.value, force = TRUE))
+  detach(t.test.output)
+  return(res.t)
 }
 
 
