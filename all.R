@@ -71,6 +71,7 @@ dS <- function(varname, label = FALSE, dummy = FALSE) {
 
 
 summary.t <- function(t.test.output) {
+  if(class(t.test.output) != "htest") stop("Needs output from t.test() function.")
   attach(t.test.output)
   res.t <- paste0("t(", parameter, ") = ", round2(statistic, force = TRUE), ", p = ", round3(p.value, force = TRUE))
   detach(t.test.output)
