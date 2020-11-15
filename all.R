@@ -1,8 +1,8 @@
 cat("\n####################")
 cat("\nLoading Nadya's functions and other QOL upgrades from Github.")
-cat("\nLast updated: 15 Nov 2020, 11:32pm")
-cat("\nPackage(s)  : dplyr")
-cat("\nOption(s)   : Prevent scientific notation.")
+cat("\nLast update: 16 Nov 2020, 5:33am")
+cat("\nPackage(s) : dplyr")
+cat("\nOption(s)  : Prevent scientific notation.")
 cat("\n")
 
 starttime = Sys.time()
@@ -154,6 +154,15 @@ summary.t <- function(t.test.output) {
   p_value = t.test.output$p.value
   res.t = paste0("t(", degrees_of_freedom, ") = ", round2(t_statistic, force = TRUE), ", p = ", round3(p_value, force = TRUE))
   return(res.t)
+}
+
+
+
+write_double <- function(data, filename) {
+  write.csv(data, paste0(filename, ".csv"), row.names = F)
+  library(haven); write_sav(data, paste0(filename, ".sav"))
+  cat("csv and sav files have been written to the working directory.\n")
+  invisible(data)
 }
 
 
