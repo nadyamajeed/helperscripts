@@ -1,8 +1,8 @@
 cat("\n####################")
 cat("\nLoading Nadya's functions and other QOL upgrades from Github.")
-cat("\nLast updated: 15 Nov 2020")
-cat("\nPackage(s) : dplyr")
-cat("\nOption(s)  : Prevent scientific notation.")
+cat("\nLast updated: 15 Nov 2020, 11:32pm")
+cat("\nPackage(s)  : dplyr")
+cat("\nOption(s)   : Prevent scientific notation.")
 cat("\n")
 
 starttime = Sys.time()
