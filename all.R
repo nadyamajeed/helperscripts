@@ -80,7 +80,8 @@ winsorSD <- function(values, SD = 3, na.rm = TRUE) {
   upperbound = mean + cutoff
   
   out = values
-  out[out < lowerbound | out > upperbound] = cutoff
+  out[out < lowerbound] = lowerbound
+  out[out > upperbound] = upperbound
   return(out)
 }
 
