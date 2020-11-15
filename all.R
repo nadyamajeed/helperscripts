@@ -40,7 +40,7 @@ sigstars <- function(pval) {
 
 
 
-dS <- function(varname, label = FALSE, dummy = FALSE) {
+dS <- function(varname, label = FALSE, dummy = FALSE, compatible = FALSE) {
   
   n = sum(!is.na(varname))
   
@@ -49,8 +49,9 @@ dS <- function(varname, label = FALSE, dummy = FALSE) {
     no = sum(varname == 0, na.rm = T)
     if(yes==0 & no==0) {stop("\nCategorical variables should be dummy-coded in 0/1. Neither found.\n")}
     else {
-      percentage = round4(yes / (yes + no))
-      out = data.frame('n' = n, 'percentage' = percentage)
+      percentage = round4(yes / (yes + no)) * 100
+      if(!compatible) {out = data.frame('n' = n, 'percentage' = percentage)}
+      if(compatible) {out = data.frame('n' = n, 'value' = percentage, 'sd' = NA, 'min' = NA, 'max' = NA)}
     }
   }
   
@@ -62,10 +63,44 @@ dS <- function(varname, label = FALSE, dummy = FALSE) {
       min = min(varname, na.rm = T) %>% round2()
       max = max(varname, na.rm = T) %>% round2()
       out = data.frame('n' = n, 'm' = m, 'sd' = sd, 'min' = min, 'max' = max)
+      if(compatible) {out = out %>% dplyr::rename(value = m)}
     }
   }
   
   if(label != FALSE) {rownames(out) = label}
+  return(out)
+}
+
+
+
+dS.full <- function(data, exclude = NULL, preventdummy = FALSE, csv = FALSE, debug = FALSE) {
+
+  # exclude variables if requested
+  if(!is.null(exclude)) {data = data %>% dplyr::select(-contains(exclude))}
+
+  # retrieve colnames
+  vars = colnames(data)
+  if(debug) {print(vars)}
+
+  # extract descriptives
+  out = data.frame()
+  for(current_var in vars) {
+    if(debug) {print(current_var)}
+    # extract values in column
+    current_values = data[, current_var]
+    # check if column is dummy coded
+    dummycheck = sum(current_values != 0 & current_values != 1, na.rm = T)
+    dummy = ifelse(dummycheck == 0, TRUE, FALSE)
+    # prepare label
+    label = current_var
+    if(dummy) {label = paste(current_var, "(%)")}
+    # run dS for current variable
+    current_dS = dS(current_values, dummy = dummy, compatible = TRUE, label = label)
+    # bind back to table of descriptives
+    out = rbind(out, current_dS)
+  }
+
+  if(csv){write.csv(out, "descriptives.csv")}
   return(out)
 }
 
