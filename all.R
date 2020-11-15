@@ -45,8 +45,8 @@ dS <- function(varname, label = FALSE, dummy = FALSE) {
   n = sum(!is.na(varname))
   
   if(dummy) {
-    yes = sum(varname == 1, na.rm=T)
-    no = sum(varname == 0, na.rm=T)
+    yes = sum(varname == 1, na.rm = T)
+    no = sum(varname == 0, na.rm = T)
     if(yes==0 & no==0) {stop("\nCategorical variables should be dummy-coded in 0/1. Neither found.\n")}
     else {
       percentage = round4(yes / (yes + no))
@@ -71,13 +71,13 @@ dS <- function(varname, label = FALSE, dummy = FALSE) {
 
 
 
-winsorSD <- function(values, SD = 3, na.rm = TRUE) {
-  mean = mean(values, na.rm = na.rm)
-  oneSD = sd(values, na.rm = na.rm)
+winsorSD <- function(values, SD = 3) {
+  m = mean(values, na.rm = TRUE)
+  oneSD = sd(values, na.rm = TRUE)
   
-  cutoff = oneSD * SD
-  lowerbound = mean - cutoff
-  upperbound = mean + cutoff
+  margin = oneSD * SD
+  lowerbound = m - margin
+  upperbound = m + margin
   
   out = values
   out[out < lowerbound] = lowerbound
