@@ -1,6 +1,6 @@
 cat("\n####################")
 cat("\nLoading Nadya's functions and other QOL upgrades from Github.")
-cat("\Last updated: 15 Nov 2020")
+cat("\nLast updated: 15 Nov 2020")
 cat("\nPackage(s) : dplyr")
 cat("\nOption(s)  : Prevent scientific notation.")
 cat("\n")
