@@ -72,11 +72,10 @@ dS <- function(varname, label = FALSE, dummy = FALSE) {
 
 
 winsorSD <- function(values, SD = 3, na.rm = TRUE) {
-  raw = values
   oneSD = sd(values, na.rm = na.rm)
   cutoff = oneSD * SD
   out = values
-  out[out < -cutoff | out > cutoff] <- cutoff
+  out[out < -cutoff | out > cutoff] = cutoff
   return(out)
 }
 
