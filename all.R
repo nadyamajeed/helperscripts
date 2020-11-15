@@ -74,12 +74,12 @@ dS <- function(varname, label = FALSE, dummy = FALSE) {
 winsorSD <- function(values, numSD = 3, debug = FALSE) {
   m = mean(values, na.rm = TRUE)
   oneSD = sd(values, na.rm = TRUE)
-  if(debug){cat("\nMean = ", m, ", SD = ", oneSD, "\n")}
+  if(debug){cat("\nMean = ", m, ", SD = ", oneSD, "\n", sep = "")}
   
   margin = oneSD * numSD
   lowerbound = m - margin
   upperbound = m + margin
-  if(debug){cat("\nMargin = ", margin, ", Bounds = [", lowerbound, ", " upperbound, "]\n")}
+  if(debug){cat("\nMargin = ", margin, ", Bounds = [", lowerbound, ", ", upperbound, "]\n", sep = "")}
   
   out = values
   out[out < lowerbound] = lowerbound
