@@ -72,10 +72,15 @@ dS <- function(varname, label = FALSE, dummy = FALSE) {
 
 
 winsorSD <- function(values, SD = 3, na.rm = TRUE) {
+  mean = mean(values, na.rm = na.rm)
   oneSD = sd(values, na.rm = na.rm)
+  
   cutoff = oneSD * SD
+  lowerbound = mean - cutoff
+  upperbound = mean + cutoff
+  
   out = values
-  out[out < -cutoff | out > cutoff] = cutoff
+  out[out < lowerbound | out > upperbound] = cutoff
   return(out)
 }
 
