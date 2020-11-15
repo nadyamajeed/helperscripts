@@ -75,7 +75,7 @@ dS <- function(varname, label = FALSE, dummy = FALSE, compatible = FALSE) {
 
 dS.full <- function(data, exclude = NULL, print = TRUE, csv = TRUE, debug = FALSE) {
   
-  if(!is.data.frame(m)) stop("Please pass in a data.frame.")
+  if(!is.data.frame(data)) stop("Please pass in a data.frame.")
   
   # exclude variables if requested
   if(!is.null(exclude)) {
