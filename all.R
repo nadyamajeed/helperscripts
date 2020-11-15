@@ -73,35 +73,58 @@ dS <- function(varname, label = FALSE, dummy = FALSE, compatible = FALSE) {
 
 
 
-dS.full <- function(data, exclude = NULL, preventdummy = FALSE, csv = FALSE, debug = FALSE) {
-
+dS.full <- function(data, exclude = NULL, print = TRUE, csv = TRUE, debug = FALSE) {
+  
+  if(!is.data.frame(m)) stop("Please pass in a data.frame.")
+  
   # exclude variables if requested
-  if(!is.null(exclude)) {data = data %>% dplyr::select(-contains(exclude))}
-
+  if(!is.null(exclude)) {
+    exclusions = data %>% dplyr::select(contains(exclude)) %>% colnames()
+    cat("Excluding the following columns:", exclusions, "\n")
+    data = data %>% dplyr::select(-contains(exclude))
+    }
+  
   # retrieve colnames
   vars = colnames(data)
   if(debug) {print(vars)}
-
+  
   # extract descriptives
   out = data.frame()
   for(current_var in vars) {
-    if(debug) {print(current_var)}
+    
     # extract values in column
     current_values = data[, current_var]
-    # check if column is dummy coded
-    dummycheck = sum(current_values != 0 & current_values != 1, na.rm = T)
-    dummy = ifelse(dummycheck == 0, TRUE, FALSE)
-    # prepare label
-    label = current_var
-    if(dummy) {label = paste(current_var, "(%)")}
-    # run dS for current variable
-    current_dS = dS(current_values, dummy = dummy, compatible = TRUE, label = label)
-    # bind back to table of descriptives
-    out = rbind(out, current_dS)
+    
+    # check if column is numeric first, proceed if yes, otherwise skip
+    if(is.numeric(current_values)) {
+      
+      # check if column is dummy coded
+      dummycheck = sum(current_values != 0 & current_values != 1, na.rm = T)
+      dummy = ifelse(dummycheck == 0, TRUE, FALSE)
+      
+      # prepare label
+      label = current_var
+      if(dummy) {label = paste(current_var, "(%)")}
+      
+      # run dS for current variable
+      current_dS = dS(current_values, dummy = dummy, compatible = TRUE, label = label)
+      
+      # bind back to table of descriptives
+      out = rbind(out, current_dS)
+    }
+    
+    else {cat("\nSkipping", current_var, "as it is not numeric.\n")}
   }
-
-  if(csv){write.csv(out, "descriptives.csv")}
-  return(out)
+  
+  if(print){cat("\n"); print(out)}
+  
+  if(csv){
+    cat("\nWriting descriptives.csv into the working directory.\n")
+    write.csv(out, "descriptives.csv")
+    cat("Done!\n")
+  }
+  
+  invisible(out)
 }
 
 
@@ -119,7 +142,7 @@ winsorSD <- function(values, numSD = 3, debug = FALSE) {
   out = values
   out[out < lowerbound] = lowerbound
   out[out > upperbound] = upperbound
-  return(out)
+  invisible(out)
 }
 
 
