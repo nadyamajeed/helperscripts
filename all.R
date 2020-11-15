@@ -4,7 +4,7 @@ cat("\nPackage(s): dplyr")
 cat("\nOption(s) : Prevent scientific notation.")
 cat("\n")
 
-starttime <- Sys.time()
+starttime = Sys.time()
 
 ##########
 
@@ -17,8 +17,8 @@ options(scipen = 9999)
 
 roundx <- function(thing_to_round, dp, force = FALSE) {
   if(!is.logical(force)) stop("'force' must be set to TRUE or FALSE (default FALSE).")
-  number <- round(as.numeric(thing_to_round), as.numeric(dp))
-  if(force) {number <- format(number, nsmall = dp)}
+  number = round(as.numeric(thing_to_round), as.numeric(dp))
+  if(force) {number = format(number, nsmall = dp)}
   return(number)
 }
 round2 <- function(thing_to_round, force = FALSE) {return(roundx(thing_to_round, 2, force = force))}
@@ -29,8 +29,8 @@ round5 <- function(thing_to_round, force = FALSE) {return(roundx(thing_to_round,
 
 
 sigstars <- function(pval) {
-  pval <- as.numeric(pval)
-  stars <- ifelse(
+  pval = as.numeric(pval)
+  stars = ifelse(
     pval < .001, "***", ifelse(
       pval < .01, "**", ifelse(
         pval < .05, "*", "")))
@@ -49,22 +49,33 @@ dS <- function(varname, label = FALSE, dummy = FALSE) {
     if(yes==0 & no==0) {stop("\nCategorical variables should be dummy-coded in 0/1. Neither found.\n")}
     else {
       percentage = round4(yes / (yes + no))
-      out <- data.frame('n' = n, 'percentage' = percentage)
+      out = data.frame('n' = n, 'percentage' = percentage)
     }
   }
   
   else {
     if(!is.numeric(varname)) {stop("\nVariable is not numeric.\nPlease convert the variable, check the variable name, or set categorical = TRUE to compute descriptives for (dummy-coded) categorical variables.\n")}
     else {
-      m = mean(varname, na.rm=T) %>% round2()
-      sd = sd(varname, na.rm=T) %>% round2()
-      min = min(varname, na.rm=T) %>% round2()
-      max = max(varname, na.rm=T) %>% round2()
-      out <- data.frame('n' = n, 'm' = m, 'sd' = sd, 'min' = min, 'max' = max)
+      m = mean(varname, na.rm = T) %>% round2()
+      sd = sd(varname, na.rm = T) %>% round2()
+      min = min(varname, na.rm = T) %>% round2()
+      max = max(varname, na.rm = T) %>% round2()
+      out = data.frame('n' = n, 'm' = m, 'sd' = sd, 'min' = min, 'max' = max)
     }
   }
   
-  if(label != FALSE) {rownames(out) <- label}
+  if(label != FALSE) {rownames(out) = label}
+  return(out)
+}
+
+
+
+winsorSD <- function(values, SD = 3, na.rm = TRUE) {
+  raw = values
+  oneSD = sd(values, na.rm = na.rm)
+  cutoff = oneSD * SD
+  out = values
+  out[out < cutoff | out > cutoff] <- cutoff
   return(out)
 }
 
@@ -75,7 +86,7 @@ summary.t <- function(t.test.output) {
   degrees_of_freedom = t.test.output$parameter
   t_statistic = t.test.output$statistic
   p_value = t.test.output$p.value
-  res.t <- paste0("t(", degrees_of_freedom, ") = ", round2(t_statistic, force = TRUE), ", p = ", round3(p_value, force = TRUE))
+  res.t = paste0("t(", degrees_of_freedom, ") = ", round2(t_statistic, force = TRUE), ", p = ", round3(p_value, force = TRUE))
   return(res.t)
 }
 
@@ -83,7 +94,7 @@ summary.t <- function(t.test.output) {
 
 ##########
 
-endtime <- Sys.time()
+endtime = Sys.time()
 cat("\nFinished loading Nadya's QOL upgrades.")
 cat("\nTime taken:", (endtime - starttime))
 cat("\n####################")
