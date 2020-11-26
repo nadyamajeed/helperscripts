@@ -1,7 +1,7 @@
 cat("\n####################")
 cat("\nLoading Nadya's functions and other QOL upgrades from Github.")
-cat("\nLast update: 16 Nov 2020, 5:33am")
-cat("\nPackage(s) : dplyr")
+cat("\nLast update: 26 Nov 2020, 8:03pm")
+cat("\nPackage(s) : dplyr (+ haven for some functions)")
 cat("\nOption(s)  : Prevent scientific notation.")
 cat("\n")
 
@@ -82,7 +82,7 @@ dS.full <- function(data, exclude = NULL, print = TRUE, csv = TRUE, debug = FALS
     exclusions = data %>% dplyr::select(contains(exclude)) %>% colnames()
     cat("Excluding the following columns:", exclusions, "\n")
     data = data %>% dplyr::select(-contains(exclude))
-    }
+  }
   
   # retrieve colnames
   vars = colnames(data)
@@ -125,6 +125,41 @@ dS.full <- function(data, exclude = NULL, print = TRUE, csv = TRUE, debug = FALS
   }
   
   invisible(out)
+}
+
+
+
+dS.split <- function(varname, group, levels = NULL, labels = NULL) {
+  
+  # if levels not specified, automatically retrieve levels
+  if(is.null(levels)) {
+    # stop if labels specified but levels not, in case it's wrong order
+    if(!is.null(labels)) {stop("Labels given but levels not specified.\nSpecify levels using levels = c(...) argument, or drop the labels argument.")}
+    # otherwise, continue
+    if(!is.factor(group)) {group = as.factor(group)}
+    levels = levels(group)
+  }
+  
+  # extract dS for each level
+  out = data.frame()
+  for(level in levels) {out = rbind(out, dS(varname[group == level], label = level))}
+  
+  # replace labels if requested
+  if(!is.null(labels)) {rownames(out) = labels}
+  
+  # return split dS
+  return(out)
+}
+
+
+
+frequencies <- function(varname) {
+  table(varname) %>% as.data.frame() %>%
+    dplyr::mutate(
+      value = varname,
+      freq_raw = Freq,
+      freq_percent = round2(100 * freq_raw / sum(freq_raw)),
+      .keep = "none")
 }
 
 
