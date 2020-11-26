@@ -1,6 +1,6 @@
 cat("\n####################")
 cat("\nLoading Nadya's functions and other QOL upgrades from Github.")
-cat("\nLast update: 26 Nov 2020, 8:03pm")
+cat("\nLast update: 26 Nov 2020, 9:27pm")
 cat("\nPackage(s) : dplyr (+ haven for some functions)")
 cat("\nOption(s)  : Prevent scientific notation.")
 cat("\n")
@@ -40,12 +40,20 @@ sigstars <- function(pval) {
 
 
 
-psign <- function(pval, intext = TRUE) {
+intext_p <- function(pval) {
   if(pval > 1) {stop("pval > 1. Are you sure you passed in a p-value?")}
   if(pval < 0) {stop("pval < 0. Are you sure you passed in a p-value?")}
-  out = ifelse(pval < .001, "<", "=")
-  if(intext) {out = ifelse(out == "<", "p < .001", paste0("p = ", round3(pval, force = TRUE), sep = ""))}
-  return(out)
+  return(ifelse(pval < .001, "p < .001", paste0("p = ", round3(pval, force = TRUE), sep = "")))
+}
+
+
+
+intext_t <- function(t.test.output) {
+  if(class(t.test.output) != "htest") stop("Needs output from t.test() function.")
+  degrees_of_freedom = t.test.output$parameter
+  t_statistic = t.test.output$statistic
+  p_value = t.test.output$p.value
+  return(paste0("t(", degrees_of_freedom, ") = ", round2(t_statistic, force = TRUE), ", ", intext_p(p)))
 }
 
 
@@ -188,17 +196,6 @@ winsorSD <- function(values, numSD = 3, debug = FALSE) {
   out[out < lowerbound] = lowerbound
   out[out > upperbound] = upperbound
   invisible(out)
-}
-
-
-
-summary.t <- function(t.test.output) {
-  if(class(t.test.output) != "htest") stop("Needs output from t.test() function.")
-  degrees_of_freedom = t.test.output$parameter
-  t_statistic = t.test.output$statistic
-  p_value = t.test.output$p.value
-  res.t = paste0("t(", degrees_of_freedom, ") = ", round2(t_statistic, force = TRUE), ", p = ", round3(p_value, force = TRUE))
-  return(res.t)
 }
 
 
