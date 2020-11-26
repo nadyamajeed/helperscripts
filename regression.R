@@ -5,8 +5,8 @@ source_url("https://raw.githubusercontent.com/nadyaeiou/nadyasscripts/main/all.R
 
 cat("\n####################")
 cat("\nLoading Nadya's linear regression upgrades from Github.")
-cat("\nLast update: 17 Nov 2020, 7:58pm")
-cat("\nPackage(s) : QuantPsyc")
+cat("\nLast update: 26 Nov 2020, 9:17pm")
+cat("\nPackage(s) : car, QuantPsyc")
 cat("\n")
 
 starttime <- Sys.time()
@@ -15,11 +15,45 @@ starttime <- Sys.time()
 
 
 
-library(QuantPsyc)
+library(QuantPsyc); library(car)
 
 
 
-regression <- function(formula, data, confint = TRUE, round = TRUE) {
+intext_regCoeffs <- function(beta, b, se) {
+  return(paste0("β = ", beta, ", b = ", b, ", SE = ", se, sep = ""))
+}
+
+
+
+intext_CI <- function(cilower, ciupper) {
+  return(ci = paste0("95% CI = [", cilower, ", ", ciupper, "]", sep = ""))
+}
+
+
+
+intext_regression <- function(regression.output) {
+  res = regression.output
+  varname = res[2, 1]
+  
+  beta = res[2, 2] %>% round2(force = TRUE) %>% trimws()
+  b = res[2, 3] %>% round2(force = TRUE) %>% trimws()
+  se = res[2, 4] %>% round2(force = TRUE) %>% trimws()
+  bbs = intext_regCoeffs(beta, b, se)
+  
+  ci95 = res[2, c(7, 8)] %>% round2(force = TRUE) %>% trimws()
+  ci95 = intext_CI(ci95[1], ci95[2])
+  
+  pval = res[2, 5]
+  psegment = intext_p(pval)
+  
+  return(paste0(varname, " ", bbs, ", ", ci95, ", ", psegment, sep = ""))
+}
+
+
+
+regression <- function(formula, data, round = TRUE, intext = FALSE, rsq = FALSE, vif = FALSE, full = FALSE) {
+  
+  if(full) {intext = TRUE; rsq = TRUE; vif = TRUE}
   
   # run lm
   lm.output = lm(formula, data = data)
@@ -28,7 +62,7 @@ regression <- function(formula, data, confint = TRUE, round = TRUE) {
   out = lm.output %>% summary()
   out = data.frame(out[["coefficients"]])
   colnames(out) = c("coeff", "se", "t", "p")
-
+  
   # reformat
   out = out %>% dplyr::mutate(
     variable = rownames(out),
@@ -43,25 +77,43 @@ regression <- function(formula, data, confint = TRUE, round = TRUE) {
   # add std coeffs
   out$stdcoeff = c('(Intercept)' = NA, lm.beta(lm.output))
   
+  # add confint
+  ci95 = lm.output %>% confint()
+  out$CI95lower = ci95[ , 1]
+  out$CI95upper = ci95[ , 2]
+  
+  # if user wants to see intext, print it
+  if(intext) {
+    cat(intext_regression(out), "\n\n")
+  }
+  
   # round if needed
   if(round) {
     out = out %>% dplyr::mutate(
       stdcoeff = round2(stdcoeff),
       coeff = round2(coeff),
       se = round2(se),
-      p = round3(p)
+      p = round3(p),
+      CI95lower = round2(CI95lower),
+      CI95upper = round2(CI95upper)
     )
   }
   
-  # extract 95% CI and add to output if requested, and round if needed
-  if(confint) {
-    ci95 = lm.output %>% confint()
-    if(round) {
-      ci95[ , 1] = ci95[ , 1] %>% round2()
-      ci95[ , 2] = ci95[ , 2] %>% round2()
-      }
-    out$CI95lower = ci95[ , 1]
-    out$CI95upper = ci95[ , 2]
+  # add vif if requested (and round if needed)
+  if(vif) {
+    vif.values = car::vif(lm.output)
+    if(round) {vif.values = round2(vif.values)}
+    vif.values = c(NA, vif.values)
+    out$vif = vif.values
+  }
+  
+  # retrieve and print R squared values if requested
+  if(rsq) {
+    summarised = summary(lm.output)
+    cat(
+      "Multiple R square = ", summarised[["r.squared"]] %>% round4(),
+      ", Adjusted R square = ", summarised[["adj.r.squared"]] %>% round4(),
+      "\n\n", sep = "")
   }
   
   # return clean output
@@ -118,18 +170,7 @@ regression.hierarchical <- function(formulae, data, intext = TRUE, viewtable = T
   if(intext) {
     for(n in 1:num_of_models) {
       res = results[[n]]
-      varname = res[2, 1]
-      beta = res[2, 2] %>% round2(force = TRUE) %>% trimws()
-      b = res[2, 3] %>% round2(force = TRUE) %>% trimws()
-      se = res[2, 4] %>% round2(force = TRUE) %>% trimws()
-      ci95 = res[2, c(7, 8)] %>% round2(force = TRUE) %>% trimws()
-      p = res[2, 5] %>% round3(force = TRUE) %>% trimws()
-      p.operator = ifelse(res[2, 6] == "***", "<", "=")
-      
-      bbs = paste0("β = ", beta, ", b = ", b, ", SE = ", se, sep = "")
-      ci95 = paste0("95% CI = [", ci95[1], ", ", ci95[2], "]", sep = "")
-      psegment = ifelse(p.operator == "<", "p < .001", paste0("p = ", p, sep = ""))
-      cat("Model ", n, ": ", varname, " ", bbs, ", ", ci95, ", ", psegment, "\n", sep = "")
+      cat(intext_regression(res), "\n")
     }
   }
   
