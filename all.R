@@ -40,6 +40,16 @@ sigstars <- function(pval) {
 
 
 
+psign <- function(pval, intext = TRUE) {
+  if(pval > 1) {stop("pval > 1. Are you sure you passed in a p-value?")}
+  if(pval < 0) {stop("pval < 0. Are you sure you passed in a p-value?")}
+  out = ifelse(pval < .001, "<", "=")
+  if(intext) {out = ifelse(out == "<", "p < .001", paste0("p = ", round3(pval, force = TRUE), sep = ""))}
+  return(out)
+}
+
+
+
 dS <- function(varname, label = FALSE, dummy = FALSE, compatible = FALSE) {
   
   n = sum(!is.na(varname))
