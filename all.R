@@ -53,7 +53,7 @@ intext_t <- function(t.test.output) {
   degrees_of_freedom = t.test.output$parameter
   t_statistic = t.test.output$statistic
   p_value = t.test.output$p.value
-  return(paste0("t(", degrees_of_freedom, ") = ", round2(t_statistic, force = TRUE), ", ", intext_p(p)))
+  return(paste0("t(", degrees_of_freedom, ") = ", round2(t_statistic, force = TRUE), ", ", intext_p(p_value)))
 }
 
 
