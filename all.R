@@ -1,8 +1,9 @@
 cat("\n####################")
 cat("\nLoading Nadya's functions and other QOL upgrades from Github.")
-cat("\nLast update: 26 Nov 2020, 9:27pm")
-cat("\nPackage(s) : dplyr (+ haven for some functions)")
-cat("\nOption(s)  : Prevent scientific notation.")
+cat("\n       Last updated : 13 Dec 2020, 5:39am")
+cat("\n Loading Package(s) : dplyr (+ haven for some functions)")
+cat("\nRequired Package(s) : haven (for write_double and unhaven functions)")
+cat("\n          Option(s) : Prevent scientific notation.")
 cat("\n")
 
 starttime = Sys.time()
@@ -91,7 +92,7 @@ dS <- function(varname, label = FALSE, dummy = FALSE, compatible = FALSE) {
 
 
 
-dS.full <- function(data, exclude = NULL, print = TRUE, csv = TRUE, debug = FALSE) {
+dS.full <- function(data, exclude = NULL, print = TRUE, csv = TRUE, csv_name = "descriptives.csv", debug = FALSE) {
   
   if(!is.data.frame(data)) stop("Please pass in a data.frame.")
   
@@ -137,8 +138,8 @@ dS.full <- function(data, exclude = NULL, print = TRUE, csv = TRUE, debug = FALS
   if(print){cat("\n"); print(out)}
   
   if(csv){
-    cat("\nWriting descriptives.csv into the working directory.\n")
-    write.csv(out, "descriptives.csv")
+    cat("\nWriting csv into the working directory.\n")
+    write.csv(out, csv_name)
     cat("Done!\n")
   }
   
@@ -202,9 +203,15 @@ winsorSD <- function(values, numSD = 3, debug = FALSE) {
 
 write_double <- function(data, filename) {
   write.csv(data, paste0(filename, ".csv"), row.names = F)
-  library(haven); write_sav(data, paste0(filename, ".sav"))
+  haven::write_sav(data, paste0(filename, ".sav"))
   cat("csv and sav files have been written to the working directory.\n")
   invisible(data)
+}
+
+
+
+unhaven <- function(data) {
+  return(data %>% haven::zap_labels() %>% haven::zap_label() %>% as.data.frame())
 }
 
 
@@ -213,7 +220,7 @@ write_double <- function(data, filename) {
 
 endtime = Sys.time()
 cat("\nFinished loading Nadya's QOL upgrades.")
-cat("\nTime taken:", (endtime - starttime))
+cat("\nTime taken :", (endtime - starttime))
 cat("\n####################")
 cat("\n")
 
