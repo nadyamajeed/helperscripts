@@ -4,9 +4,10 @@ source_url("https://raw.githubusercontent.com/nadyaeiou/nadyasscripts/main/all.R
 ##########
 
 cat("\n####################")
-cat("\nLoading Nadya's linear regression upgrades (with EM support) from Github.")
-cat("\nLast update: 6 Dec 2020, 5:14am")
-cat("\nPackage(s) : car, QuantPsyc, tidyverse")
+cat("\nLoading Nadya's linear regression upgrades (with Amelia support) from Github.")
+cat("\n        Last update : 13 Dec 2020, 1:43am")
+cat("\n Loading Package(s) : tidyverse")
+cat("\nRequired Package(s) : broom, car, effectsize, lm.beta, purrr")
 cat("\n")
 
 starttime <- Sys.time()
@@ -15,7 +16,7 @@ starttime <- Sys.time()
 
 
 
-library(QuantPsyc); library(car); library(tidyverse)
+library(tidyverse)
 
 
 
@@ -31,19 +32,35 @@ intext_CI <- function(cilower, ciupper) {
 
 
 
-intext_regression <- function(regression.output) {
-  res = regression.output
-  varname = res[2, 1]
+intext_regression <- function(regression.output, varname = NULL) {
   
-  beta = res[2, 2] %>% round2(force = TRUE) %>% trimws()
-  b = res[2, 3] %>% round2(force = TRUE) %>% trimws()
-  se = res[2, 4] %>% round2(force = TRUE) %>% trimws()
+  res = regression.output
+  
+  # if varname is not set, assume first non-intercept term is desired
+  if(is.null(varname)) {rownum = 2}
+  # if varname is set, find it
+  else {
+    # if varname is not given as a character, stop function and tell user
+    if(!is.character(varname)) {stop("varname not recognised. Pass in the name of a term in character class.")}
+    else {
+      # find row number of the variable
+      rownum = match(varname, res$variable)
+      # if row number cannot be found, stop function and tell user
+      if(is.na(rownum)) {stop("varname not recognised. Pass in the name of a term in the equation.")}
+      }
+    }
+
+  varname = res[rownum, 1]
+
+  beta = res[rownum, 2] %>% round2(force = TRUE) %>% trimws()
+  b = res[rownum, 3] %>% round2(force = TRUE) %>% trimws()
+  se = res[rownum, 4] %>% round2(force = TRUE) %>% trimws()
   bbs = intext_regCoeffs(beta, b, se)
   
-  ci95 = res[2, c(7, 8)] %>% round2(force = TRUE) %>% trimws()
+  ci95 = res[rownum, c(7, 8)] %>% round2(force = TRUE) %>% trimws()
   ci95 = intext_CI(ci95[1], ci95[2])
   
-  pval = res[2, 5]
+  pval = res[rownum, 5]
   psegment = intext_p(pval)
   
   return(paste0(varname, " ", bbs, ", ", ci95, ", ", psegment, sep = ""))
@@ -51,12 +68,19 @@ intext_regression <- function(regression.output) {
 
 
 
-regression <- function(formula, data, round = TRUE, intext = FALSE, rsq = FALSE, vif = FALSE, full = FALSE) {
+regression <- function(
+  formula.lm, data, std_method = "effectsize",
+  round = TRUE, intext = FALSE, intext_specific = NULL,
+  rsq = FALSE, vif = FALSE, full = FALSE) {
   
   if(full) {intext = TRUE; rsq = TRUE; vif = TRUE}
   
+  if(!(std_method %in% c("effectsize", "lm.beta"))) {
+    stop("std_method specified not recognised.\nEither use 'effectsize' (default, scales all variables before running regression)\nor 'lm.beta' (follows SPSS method, less computationally-expensive but inappropriate for interactions).")
+  }
+    
   # run lm
-  lm.output = lm(formula, data = data)
+  lm.output = lm(formula.lm, data = data)
   
   # prepare extraction of coeff, se, t, p
   out = lm.output %>% summary()
@@ -66,7 +90,6 @@ regression <- function(formula, data, round = TRUE, intext = FALSE, rsq = FALSE,
   # reformat
   out = out %>% dplyr::mutate(
     variable = rownames(out),
-    stdcoeff = NA,
     coeff = coeff,
     se = se,
     p = p,
@@ -75,7 +98,25 @@ regression <- function(formula, data, round = TRUE, intext = FALSE, rsq = FALSE,
   )
   
   # add std coeffs
-  out$stdcoeff = c('(Intercept)' = NA, lm.beta(lm.output))
+  if(std_method == "effectsize") {
+    std.summary = lm(formula.lm, data = effectsize::standardize(data)) %>% summary()
+    std.summary = data.frame(std.summary[["coefficients"]])
+    colnames(std.summary) = c("stdcoeff", "se", "t", "p")
+    stdcoeffs_df = std.summary %>% dplyr::mutate(
+      variable = rownames(std.summary),
+      stdcoeff = stdcoeff,
+      .keep = "none"
+    )
+  }
+  else if(std_method == "lm.beta") {
+    stdcoeffs = lm.beta::lm.beta(lm.output)$standardized.coefficients
+    stdcoeffs_df = data.frame(
+      variable = names(stdcoeffs),
+      stdcoeff = stdcoeffs
+    )
+  }
+  out = merge(stdcoeffs_df, out, sort = FALSE)
+  out[1, "stdcoeff"] = NA
   
   # add confint
   ci95 = lm.output %>% confint()
@@ -84,7 +125,7 @@ regression <- function(formula, data, round = TRUE, intext = FALSE, rsq = FALSE,
   
   # if user wants to see intext, print it
   if(intext) {
-    cat(intext_regression(out), "\n\n")
+    cat(intext_regression(regression.output = out, varname = intext_specific), "\n\n")
   }
   
   # round if needed
@@ -122,8 +163,101 @@ regression <- function(formula, data, round = TRUE, intext = FALSE, rsq = FALSE,
 
 
 
-regression.hierarchical <- function(formulae, data, intext = TRUE, viewtable = TRUE, csv = NULL, print = TRUE, round = TRUE) {
-  if(!is.data.frame(data) & (class(data) != "amelia")) stop("Data should be a data.frame or amelia output.")
+regressionAmelia.sub <- function(formula.lm, data.amelia) {
+  # https://www.andrewheiss.com/blog/2018/03/07/amelia-tidy-melding/
+  
+  model.out <- data.amelia %>%
+    mutate(
+      model = data %>% purrr::map(~ lm(formula.lm, data = .)),
+      tidied = model %>% purrr::map(~ broom::tidy(., conf.int = TRUE)),
+      glance = model %>% purrr::map(~ broom::glance(.))
+    )
+  
+  params <- model.out %>%
+    unnest(tidied) %>%
+    dplyr::select(m, term, estimate, std.error) %>%
+    gather(key, value, estimate, std.error) %>%
+    spread(term, value) %>%
+    ungroup()
+  
+  just_coefs <- params %>%
+    dplyr::filter(key == "estimate") %>%
+    dplyr::select(-m, -key)
+  
+  just_ses <- params %>%
+    dplyr::filter(key == "std.error") %>%
+    dplyr::select(-m, -key)
+  
+  coefs_melded <- mi.meld(just_coefs, just_ses)
+  
+  model_degree_freedom <- model.out %>%
+    unnest(glance) %>%
+    dplyr::filter(m == "imp1") %>%
+    pull(df.residual)
+  
+  melded_summary <- as.data.frame(cbind(t(coefs_melded$q.mi),
+                                        t(coefs_melded$se.mi))) %>%
+    magrittr::set_colnames(c("estimate", "std.error")) %>%
+    dplyr::mutate(term = rownames(.)) %>%
+    dplyr::select(term, everything()) %>%
+    dplyr::mutate(statistic = estimate / std.error,
+                  conf.low = estimate + std.error * qt(0.025, model_degree_freedom),
+                  conf.high = estimate + std.error * qt(0.975, model_degree_freedom),
+                  p.value = 2 * pt(abs(statistic), model_degree_freedom, lower.tail = FALSE))
+  
+  ##### ADDED PART BY NADYA TO REORDER PREDICTORS ACCORDING TO FORMULA ORDER INSTEAD OF ALPHABETICAL #####
+  predictors = c("(Intercept)", labels(terms(formula.lm)))
+  melded_summary = melded_summary %>% dplyr::slice(match(predictors, term))
+  ##### END OF ADDITION #####
+  
+  return(melded_summary)
+}
+
+
+
+regressionAmelia <- function(formula.lm, amelia.output, intext = FALSE, intext_specific = NULL) {
+  
+  # handles regression and pooling for EM datasets by Amelia
+  
+  if(class(amelia.output) != "amelia") {
+    stop("Wrong input format. Pass an amelia output.")
+  }
+  
+  data.amelia.unstd <- bind_rows(unclass(amelia.output$imputations), .id = "m") %>%
+    group_by(m) %>%
+    nest()
+  
+  out = regressionAmelia.sub(formula.lm, data.amelia.unstd)
+  
+  data.amelia.std = data.amelia.unstd
+  for(d in 1:nrow(data.amelia.std)) {
+    data.amelia.std$data[[d]] = data.amelia.std$data[[d]] %>% dplyr::mutate_all(scale)
+  }
+  
+  out = out %>% dplyr::mutate(
+    variable = term,
+    stdcoeff = round(regressionAmelia.sub(formula.lm, data.amelia.std)$estimate, 10),
+    coeff = estimate,
+    se = std.error,
+    p = round(p.value, 10),
+    sig = sigstars(p),
+    CI95lower = conf.low,
+    CI95upper = conf.high,
+    .keep = "none"
+  )
+  
+  out[1, "stdcoeff"] = NA
+  
+  # if user wants to see intext, print it
+  if(intext) {cat(intext_regression(regression.output = out, varname = intext_specific)), "\n\n")}
+  
+  return(out)
+}
+
+
+
+regression.hierarchical <- function(formulae, data, intext = TRUE, intext_specific = NULL, viewtable = TRUE, csv = NULL, print = TRUE, round = TRUE) {
+  if(!is.data.frame(data) & (class(data) != "amelia")) stop("Data should be of class data.frame or amelia.")
   if(!is.null(csv)) {
     if(!grepl(".csv", csv)) stop("You have indicated that you want a .csv output. Please ensure your filename (passed to csv argument) ends in '.csv'. If you do not want a .csv output, omit the csv argument.")
   }
@@ -172,105 +306,12 @@ regression.hierarchical <- function(formulae, data, intext = TRUE, viewtable = T
   if(intext) {
     for(n in 1:num_of_models) {
       res = results[[n]]
-      cat(intext_regression(res), "\n")
+      cat(intext_regression(regression.output = res, varname = intext_specific), "\n")
     }
   }
   
   # silently return list
   invisible(results)
-}
-
-
-
-regressionAmelia.sub <- function(formula.lm, data.amelia) {
-  # https://www.andrewheiss.com/blog/2018/03/07/amelia-tidy-melding/
-  
-  model.out <- data.amelia %>%
-    mutate(
-      model = data %>% map(~ lm(formula.lm, data = .)),
-      tidied = model %>% map(~ tidy(., conf.int = TRUE)),
-      glance = model %>% map(~ glance(.))
-    )
-  
-  params <- model.out %>%
-    unnest(tidied) %>%
-    dplyr::select(m, term, estimate, std.error) %>%
-    gather(key, value, estimate, std.error) %>%
-    spread(term, value) %>%
-    ungroup()
-  
-  just_coefs <- params %>%
-    filter(key == "estimate") %>%
-    dplyr::select(-m, -key)
-  
-  just_ses <- params %>%
-    filter(key == "std.error") %>%
-    dplyr::select(-m, -key)
-  
-  coefs_melded <- mi.meld(just_coefs, just_ses)
-  
-  model_degree_freedom <- model.out %>%
-    unnest(glance) %>%
-    filter(m == "imp1") %>%
-    pull(df.residual)
-  
-  melded_summary <- as.data.frame(cbind(t(coefs_melded$q.mi),
-                                        t(coefs_melded$se.mi))) %>%
-    magrittr::set_colnames(c("estimate", "std.error")) %>%
-    mutate(term = rownames(.)) %>%
-    dplyr::select(term, everything()) %>%
-    mutate(statistic = estimate / std.error,
-           conf.low = estimate + std.error * qt(0.025, model_degree_freedom),
-           conf.high = estimate + std.error * qt(0.975, model_degree_freedom),
-           p.value = 2 * pt(abs(statistic), model_degree_freedom, lower.tail = FALSE))
-  
-  ##### ADDED PART BY NADYA TO REORDER PREDICTORS ACCORDING TO FORMULA ORDER INSTEAD OF ALPHABETICAL #####
-  predictors = c("(Intercept)", labels(terms(formula.lm)))
-  melded_summary = melded_summary %>% dplyr::slice(match(predictors, term))
-  ##### END OF ADDITION #####
-  
-  return(melded_summary)
-}
-
-
-
-regressionAmelia <- function(formula.lm, amelia.output, intext = FALSE) {
-  
-  # handles regression and pooling for EM datasets by Amelia
-  
-  if(class(amelia.output) != "amelia") {
-    stop("Wrong input format. Pass an amelia output.")
-  }
-  
-  data.amelia.unstd <- bind_rows(unclass(amelia.output$imputations), .id = "m") %>%
-    group_by(m) %>%
-    nest()
-  
-  out = regressionAmelia.sub(formula.lm, data.amelia.unstd)
-  
-  data.amelia.std = data.amelia.unstd
-  for(d in 1:nrow(data.amelia.std)) {
-    data.amelia.std$data[[d]] = data.amelia.std$data[[d]] %>% dplyr::mutate_all(scale)
-  }
-  
-  out = out %>% dplyr::mutate(
-    variable = term,
-    stdcoeff = round(regressionAmelia.sub(formula.lm, data.amelia.std)$estimate, 10),
-    coeff = estimate,
-    se = std.error,
-    p = round(p.value, 10),
-    sig = sigstars(p),
-    CI95lower = conf.low,
-    CI95upper = conf.high,
-    .keep = "none"
-  )
-  
-  out[1, "stdcoeff"] = NA
-  
-  # if user wants to see intext, print it
-  if(intext) {cat(intext_regression(out), "\n\n")}
-  
-  return(out)
 }
 
 
