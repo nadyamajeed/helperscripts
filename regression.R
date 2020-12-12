@@ -5,7 +5,7 @@ source_url("https://raw.githubusercontent.com/nadyaeiou/nadyasscripts/main/all.R
 
 cat("\n####################")
 cat("\nLoading Nadya's linear regression upgrades (with Amelia support) from Github.")
-cat("\n        Last update : 13 Dec 2020, 1:43am")
+cat("\n        Last update : 13 Dec 2020, 5:17am")
 cat("\n Loading Package(s) : tidyverse")
 cat("\nRequired Package(s) : broom, car, effectsize, lm.beta, purrr")
 cat("\n")
@@ -32,7 +32,7 @@ intext_CI <- function(cilower, ciupper) {
 
 
 
-intext_regression <- function(regression.output, varname = NULL) {
+intext_regression <- function(regression.output, varname = NULL, add_intercept = FALSE) {
   
   res = regression.output
   
@@ -63,7 +63,13 @@ intext_regression <- function(regression.output, varname = NULL) {
   pval = res[rownum, 5]
   psegment = intext_p(pval)
   
-  return(paste0(varname, " ", bbs, ", ", ci95, ", ", psegment, sep = ""))
+  if(add_intercept) {
+    intercept = res[1, 3] %>% round2(force = TRUE) %>% trimws()
+    intercept_info = paste0(", intercept = ", intercept)
+  }
+  else {intercept_info = ""}
+  
+  return(paste0(varname, " ", bbs, ", ", ci95, ", ", psegment, intercept_info, sep = ""))
 }
 
 
@@ -188,7 +194,7 @@ regressionAmelia.sub <- function(formula.lm, data.amelia) {
     dplyr::filter(key == "std.error") %>%
     dplyr::select(-m, -key)
   
-  coefs_melded <- mi.meld(just_coefs, just_ses)
+  coefs_melded <- Amelia::mi.meld(just_coefs, just_ses)
   
   model_degree_freedom <- model.out %>%
     unnest(glance) %>%
@@ -215,25 +221,34 @@ regressionAmelia.sub <- function(formula.lm, data.amelia) {
 
 
 
-regressionAmelia <- function(formula.lm, amelia.output, intext = FALSE, intext_specific = NULL) {
-  
+regressionAmelia <- function(formula.lm, amelia.output = NULL, amelia.data = NULL, intext = FALSE, intext_specific = NULL, only_intext = FALSE, intext_add_intercept = FALSE) {
   # handles regression and pooling for EM datasets by Amelia
   
-  if(class(amelia.output) != "amelia") {
-    stop("Wrong input format. Pass an amelia output.")
+  # check data input
+  if(is.null(amelia.output) & is.null(amelia.data)) {stop("No data passed in.\nEither pass a full amelia output to amelia.output\nor pass amelia data to amelia.data")}
+  if(!is.null(amelia.output) & class(amelia.output) != "amelia") {stop("Wrong input format. Pass an amelia output.")}
+  
+  # extract data if needed
+  if(is.null(amelia.data)) {
+    data.amelia.unstd <- bind_rows(unclass(amelia.output$imputations), .id = "m") %>%
+      group_by(m) %>%
+      nest()
   }
+  else {data.amelia.unstd = amelia.data}
   
-  data.amelia.unstd <- bind_rows(unclass(amelia.output$imputations), .id = "m") %>%
-    group_by(m) %>%
-    nest()
+  # convert formula to formula format if needed
+  if(is.character(formula.lm)) {formula.lm = as.formula(formula.lm)}
   
+  # run regression
   out = regressionAmelia.sub(formula.lm, data.amelia.unstd)
   
+  # run regression but with std
   data.amelia.std = data.amelia.unstd
   for(d in 1:nrow(data.amelia.std)) {
     data.amelia.std$data[[d]] = data.amelia.std$data[[d]] %>% dplyr::mutate_all(scale)
   }
   
+  # prepare output table
   out = out %>% dplyr::mutate(
     variable = term,
     stdcoeff = round(regressionAmelia.sub(formula.lm, data.amelia.std)$estimate, 10),
@@ -245,13 +260,16 @@ regressionAmelia <- function(formula.lm, amelia.output, intext = FALSE, intext_s
     CI95upper = conf.high,
     .keep = "none"
   )
-  
   out[1, "stdcoeff"] = NA
   
   # if user wants to see intext, print it
-  if(intext) {cat(intext_regression(regression.output = out, varname = intext_specific)), "\n\n")}
+  if(intext) {
+    cat(intext_regression(regression.output = out, varname = intext_specific, add_intercept = intext_add_intercept), "\n\n")
+  }
   
-  return(out)
+  # depending on whether user has chosen to keep only intext or full results, return accordingly
+  if(only_intext) {return(intext_regression(regression.output = out, varname = intext_specific, add_intercept = intext_add_intercept))}
+  else {return(out)}
 }
 
 
@@ -316,11 +334,89 @@ regression.hierarchical <- function(formulae, data, intext = TRUE, intext_specif
 
 
 
+simpleslopesAmelia <- function(dv, iv, mod, mod_continuous = FALSE, covars = NULL, amelia.output, debug = FALSE) {
+  # computes simple slopes for EM imputed data
+  # via Holmbeck (2002) method
+  
+  # check data input format
+  if(class(amelia.output) != "amelia") {stop("Data should be passed in as output from amelia().")}
+  
+  # check that covars format is correct, if any
+  if(!is.null(covars) & !is.character(covars)) {stop("covars should be passed in as character form of formula, e.g., 'covar1 + covar2 + covar3'.")}
+  
+  # prepare data
+  data.amelia <- bind_rows(unclass(amelia.output$imputations), .id = "m") %>%
+    group_by(m) %>%
+    nest()
+  
+  # reprint interaction result just in case
+  f = paste0(dv, "~", iv, "*", mod)
+  if(!is.null(covars)) {if(covars != "") {f = paste0(f, "+", covars)}}
+  regressionAmelia(f, amelia.output = amelia.output, intext = TRUE, intext_specific = paste0(iv, ":", mod, sep = ""), only_intext = TRUE)
+  
+  ##### CARRY OUT HOLMBECK PROCEDURE #####
+  
+  # if categorical moderator (computational example 1)
+  if(!mod_continuous) {
+    if(debug) {cat("Now carrying out Holmbeck procedure to create grouping variables.")}
+    
+    for(d in 1:nrow(data.amelia)) {
+      if(debug) {print(d)}
+      
+      # retrieve column with iv variable
+      iv_column = data.amelia$data[[d]][[iv]]
+      
+      # retrieve column with moderator variable
+      moderator_column = data.amelia$data[[d]][[mod]]
+      
+      # check that moderator has been dummy-coded
+      yes = sum(moderator_column == 1, na.rm = T)
+      no = sum(moderator_column == 0, na.rm = T)
+      if(yes==0 & no==0) {stop("\nCategorical variables should be dummy-coded in 0/1. Neither found.\n")}
+      
+      # for each imputed dataset, add grouping columns as per Holmbeck procedure
+      data.amelia$data[[d]] = data.amelia$data[[d]] %>%
+        dplyr::mutate(
+          modlo = moderator_column,
+          modhi = moderator_column - 1
+        )
+    }
+    
+    # prepare equation for each level of moderator
+    f.0 = paste0(dv, "~", iv, "* modlo")
+    f.1 = paste0(dv, "~", iv, "* modhi")
+    
+    # add covars if any
+    if(!is.null(covars)) {
+      if(covars != "") {
+        f.0 = paste0(f.0, "+", covars)
+        f.1 = paste0(f.1, "+", covars)
+      }
+    }
+    
+    # run separate regressions
+    cat("When mod = 0:\n")
+    r0 = regressionAmelia(f.0, amelia.data = data.amelia, intext = TRUE, intext_specific = iv, only_intext = TRUE, intext_add_intercept = TRUE)
+    cat("When mod = 1:\n")
+    r1 = regressionAmelia(f.1, amelia.data = data.amelia, intext = TRUE, intext_specific = iv, only_intext = TRUE, intext_add_intercept = TRUE)
+    
+  }
+  
+  # if continuous moderator (computational example 2)
+  if(mod_continuous) {stop("Support for continuous moderators not yet written. Sorry!")}
+  
+  ##### END OF HOLMBECK PROCEDURE #####
+
+  invisible(list(mod_at_0 = r0, mod_at_1 = r1))
+}
+
+
+
 ##########
 
 endtime <- Sys.time()
 cat("\nFinished loading Nadya's linear regression upgrades.")
-cat("\nTime taken:", (endtime - starttime))
+cat("\nTime taken :", (endtime - starttime))
 cat("\n####################")
 cat("\n")
 
