@@ -195,7 +195,7 @@ mlm.hierarchical <- function(
 ##########
 
 endtime <- Sys.time()
-cat("\nFinished loading Nadya's multilevel modelling upgrades upgrades.")
+cat("\nFinished loading Nadya's multilevel modelling upgrades.")
 cat("\nTime taken :", (endtime - starttime))
 cat("\n! NOTE ! Please cite lme4 (conducting multilevel) and lmerTest (significance testing) in your manuscript.")
 cat("\n####################")
