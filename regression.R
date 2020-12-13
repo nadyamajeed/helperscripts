@@ -1,76 +1,22 @@
 library(devtools)
 source_url("https://raw.githubusercontent.com/nadyaeiou/nadyasscripts/main/all.R")
+source_url("https://raw.githubusercontent.com/nadyaeiou/nadyasscripts/main/regressionINTEXT.R")
 
 ##########
 
 cat("\n####################")
 cat("\nLoading Nadya's linear regression upgrades (with Amelia support) from Github.")
-cat("\n        Last update : 13 Dec 2020, 5:17am")
+cat("\n            Version : 0.0.0.9000")
+cat("\n        Last update : 14 Dec 2020, 5:42am")
 cat("\n Loading Package(s) : tidyverse")
 cat("\nRequired Package(s) : broom, car, effectsize, lm.beta, purrr")
 cat("\n")
 
 starttime <- Sys.time()
 
-##########
-
-
-
 library(tidyverse)
 
-
-
-intext_regCoeffs <- function(beta, b, se) {
-  return(paste0("β = ", beta, ", b = ", b, ", SE = ", se, sep = ""))
-}
-
-
-
-intext_CI <- function(cilower, ciupper) {
-  return(ci = paste0("95% CI = [", cilower, ", ", ciupper, "]", sep = ""))
-}
-
-
-
-intext_regression <- function(regression.output, varname = NULL, add_intercept = FALSE) {
-  
-  res = regression.output
-  
-  # if varname is not set, assume first non-intercept term is desired
-  if(is.null(varname)) {rownum = 2}
-  # if varname is set, find it
-  else {
-    # if varname is not given as a character, stop function and tell user
-    if(!is.character(varname)) {stop("varname not recognised. Pass in the name of a term in character class.")}
-    else {
-      # find row number of the variable
-      rownum = match(varname, res$variable)
-      # if row number cannot be found, stop function and tell user
-      if(is.na(rownum)) {stop("varname not recognised. Pass in the name of a term in the equation.")}
-      }
-    }
-
-  varname = res[rownum, 1]
-
-  beta = res[rownum, 2] %>% round2(force = TRUE) %>% trimws()
-  b = res[rownum, 3] %>% round2(force = TRUE) %>% trimws()
-  se = res[rownum, 4] %>% round2(force = TRUE) %>% trimws()
-  bbs = intext_regCoeffs(beta, b, se)
-  
-  ci95 = res[rownum, c(7, 8)] %>% round2(force = TRUE) %>% trimws()
-  ci95 = intext_CI(ci95[1], ci95[2])
-  
-  pval = res[rownum, 5]
-  psegment = intext_p(pval)
-  
-  if(add_intercept) {
-    intercept = res[1, 3] %>% round2(force = TRUE) %>% trimws()
-    intercept_info = paste0(", intercept = ", intercept)
-  }
-  else {intercept_info = ""}
-  
-  return(paste0(varname, " ", bbs, ", ", ci95, ", ", psegment, intercept_info, sep = ""))
-}
+##########
 
 
 
@@ -84,7 +30,7 @@ regression <- function(
   if(!(std_method %in% c("effectsize", "lm.beta"))) {
     stop("std_method specified not recognised.\nEither use 'effectsize' (default, scales all variables before running regression)\nor 'lm.beta' (follows SPSS method, less computationally-expensive but inappropriate for interactions).")
   }
-    
+  
   # run lm
   lm.output = lm(formula.lm, data = data)
   
@@ -406,7 +352,7 @@ simpleslopesAmelia <- function(dv, iv, mod, mod_continuous = FALSE, covars = NUL
   if(mod_continuous) {stop("Support for continuous moderators not yet written. Sorry!")}
   
   ##### END OF HOLMBECK PROCEDURE #####
-
+  
   invisible(list(mod_at_0 = r0, mod_at_1 = r1))
 }
 
