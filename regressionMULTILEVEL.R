@@ -6,8 +6,8 @@ source_url("https://raw.githubusercontent.com/nadyaeiou/nadyasscripts/main/regre
 
 cat("\n####################")
 cat("\nLoading Nadya's multilevel modelling upgrades from Github.")
-cat("\n            Version : 0.0.0.9000")
-cat("\n        Last update : 14 Dec 2020, 6:02am")
+cat("\n            Version : 0.0.0.9001")
+cat("\n        Last update : 14 Dec 2020, 6:14am")
 cat("\n Loading Package(s) : lme4, lmerTest")
 cat("\nRequired Package(s) : effectsize")
 cat("\n")
@@ -64,7 +64,7 @@ mlm <- function(
   # add std coeffs if requested
   if(std) {
     cat("Standardised coeffs calculated at level 1.\n\n")
-    if(switch_optimiser) {}
+    if(switch_optimiser) {std.output = lmer(formula.lmer, data = effectsize::standardize(data), REML = REML, control = optimiser.switch)}
     else {std.output = lmer(formula.lmer, data = effectsize::standardize(data), REML = REML)}
     
     # random effects
