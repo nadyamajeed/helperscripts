@@ -1,7 +1,8 @@
 cat("\n####################")
 cat("\nLoading Nadya's functions and other QOL upgrades from Github.")
-cat("\n       Last updated : 13 Dec 2020, 5:39am")
-cat("\n Loading Package(s) : dplyr (+ haven for some functions)")
+cat("\n            Version : 0.0.0.9000")
+cat("\n       Last updated : 16 Dec 2020, 7:48am")
+cat("\n Loading Package(s) : dplyr")
 cat("\nRequired Package(s) : haven (for write_double and unhaven functions)")
 cat("\n          Option(s) : Prevent scientific notation.")
 cat("\n")
@@ -45,16 +46,6 @@ intext_p <- function(pval) {
   if(pval > 1) {stop("pval > 1. Are you sure you passed in a p-value?")}
   if(pval < 0) {stop("pval < 0. Are you sure you passed in a p-value?")}
   return(ifelse(pval < .001, "p < .001", paste0("p = ", round3(pval, force = TRUE), sep = "")))
-}
-
-
-
-intext_t <- function(t.test.output) {
-  if(class(t.test.output) != "htest") stop("Needs output from t.test() function.")
-  degrees_of_freedom = t.test.output$parameter
-  t_statistic = t.test.output$statistic
-  p_value = t.test.output$p.value
-  return(paste0("t(", degrees_of_freedom, ") = ", round2(t_statistic, force = TRUE), ", ", intext_p(p_value)))
 }
 
 
