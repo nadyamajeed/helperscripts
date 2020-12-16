@@ -6,8 +6,8 @@ source_url("https://raw.githubusercontent.com/nadyaeiou/nadyasscripts/main/regre
 
 cat("\n####################")
 cat("\nLoading Nadya's linear regression upgrades (with Amelia support) from Github.")
-cat("\n            Version : 0.0.0.9000")
-cat("\n        Last update : 14 Dec 2020, 5:42am")
+cat("\n            Version : 0.0.0.9001")
+cat("\n        Last update : 16 Dec 2020, 8:15am")
 cat("\n Loading Package(s) : tidyverse")
 cat("\nRequired Package(s) : broom, car, effectsize, lm.beta, purrr")
 cat("\n")
@@ -220,7 +220,12 @@ regressionAmelia <- function(formula.lm, amelia.output = NULL, amelia.data = NUL
 
 
 
-regression.hierarchical <- function(formulae, data, intext = TRUE, intext_specific = NULL, viewtable = TRUE, csv = NULL, print = TRUE, round = TRUE) {
+regression.hierarchical <- function(
+  formulae, data,
+  intext = TRUE, intext_specific = NULL,
+  viewtable = TRUE, csv = NULL, print = TRUE,
+  round = TRUE) {
+  
   if(!is.data.frame(data) & (class(data) != "amelia")) stop("Data should be of class data.frame or amelia.")
   if(!is.null(csv)) {
     if(!grepl(".csv", csv)) stop("You have indicated that you want a .csv output. Please ensure your filename (passed to csv argument) ends in '.csv'. If you do not want a .csv output, omit the csv argument.")
@@ -268,9 +273,19 @@ regression.hierarchical <- function(formulae, data, intext = TRUE, intext_specif
   
   # if user wants to see intext, print it
   if(intext) {
-    for(n in 1:num_of_models) {
-      res = results[[n]]
-      cat(intext_regression(regression.output = res, varname = intext_specific), "\n")
+    # if intext_specific not specified, just run once for each model
+    if(is.null(intext_specific)) {
+      for(n in 1:num_of_models) {
+        cat(intext_regression(regression.output = results[[n]], varname = NULL), "\n")
+      }
+    }
+    # otherwise, if intext_specific is specified, run as many times as it exists for each model
+    else {
+      for(v in intext_specific) {
+        for(n in 1:num_of_models) {
+          cat(intext_regression(regression.output = results[[n]], varname = v), "\n")
+        }
+      }
     }
   }
   
