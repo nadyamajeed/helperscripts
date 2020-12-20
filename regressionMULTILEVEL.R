@@ -6,8 +6,8 @@ source_url("https://raw.githubusercontent.com/nadyaeiou/nadyasscripts/main/regre
 
 cat("\n####################")
 cat("\nLoading Nadya's multilevel modelling upgrades from Github.")
-cat("\n            Version : 0.0.0.9002")
-cat("\n        Last update : 21 Dec 2020, 3:53am")
+cat("\n            Version : 0.0.0.9003")
+cat("\n        Last update : 21 Dec 2020, 4:28am")
 cat("\n Loading Package(s) : lme4, lmerTest")
 cat("\nRequired Package(s) : effectsize")
 cat("\n")
@@ -40,8 +40,13 @@ mlm <- function(
   else {lmer.output = lmer(formula.lmer, data = data, REML = REML)}
   lmer.summary = summary(lmer.output)
   
+  # internal function to convert to data.frame and suppress class change warnings
+  convert.to.data.frame <- function(thing_to_convert) {
+    suppressWarnings(as.data.frame(thing_to_convert))
+  }
+  
   # extract random effects and conduct significance testing using lmerTest::rand
-  randomeffects = VarCorr(lmer.output) %>% as.data.frame() %>%
+  randomeffects = VarCorr(lmer.output) %>% convert.to.data.frame() %>%
     dplyr::filter(is.na(var2)) %>%
     dplyr::mutate(
       variable = paste0(var1, " | ", grp),
@@ -53,7 +58,7 @@ mlm <- function(
   randomeffects[nrow(randomeffects), "variable"] = "Residual"
   
   # extract fixed effects
-  fixedeffects = lmer.summary[["coefficients"]] %>% as.data.frame() %>%
+  fixedeffects = lmer.summary[["coefficients"]] %>% convert.to.data.frame() %>%
     dplyr::mutate(
       variable = rownames(.),
       coeff = Estimate %>% round(round),
@@ -70,7 +75,7 @@ mlm <- function(
     else {std.output = lmer(formula.lmer, data = effectsize::standardize(data), REML = REML)}
     
     # random effects
-    std.random = VarCorr(std.output) %>% as.data.frame() %>%
+    std.random = VarCorr(std.output) %>% convert.to.data.frame() %>%
       dplyr::filter(is.na(var2)) %>%
       dplyr::mutate(
         variable = paste0(var1, " | ", grp),
@@ -82,7 +87,7 @@ mlm <- function(
     
     # fixed effects
     std.summary = std.output %>% summary()
-    std.fixed = data.frame(std.summary[["coefficients"]]) %>%
+    std.fixed = std.summary[["coefficients"]] %>% convert.to.data.frame() %>%
       dplyr::mutate(
         variable = rownames(.),
         stdcoeff = Estimate %>% round(round),
@@ -97,7 +102,7 @@ mlm <- function(
     if(confint == "fixed") {ci.raw = confint(lmer.output, parm = "beta_")}
     else {ci.raw = confint(lmer.output, parm = confint, oldNames = FALSE)}
     ci = ci.raw %>%
-      as.data.frame() %>%
+      convert.to.data.frame() %>%
       dplyr::mutate(
         variable = rownames(.),
         CI95lower = `2.5 %` %>% round(round),
