@@ -7,7 +7,7 @@ source_url("https://raw.githubusercontent.com/nadyaeiou/nadyasscripts/main/regre
 cat("\n####################")
 cat("\nLoading Nadya's multilevel modelling upgrades from Github.")
 cat("\n            Version : 0.0.0.9002")
-cat("\n        Last update : 14 Dec 2020, 6:14am")
+cat("\n        Last update : 21 Dec 2020, 3:53am")
 cat("\n Loading Package(s) : lme4, lmerTest")
 cat("\nRequired Package(s) : effectsize")
 cat("\n")
