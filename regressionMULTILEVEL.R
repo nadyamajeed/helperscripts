@@ -25,7 +25,9 @@ library(lme4); library(lmerTest)
 mlm <- function(
   formula.lmer, data, REML = FALSE, switch_optimiser = FALSE,
   confint = NULL, std = FALSE, round = 5,
-  debug = FALSE) {
+  raw = TRUE, print = TRUE, timer = FALSE, debug = FALSE) {
+  
+  starttime = Sys.time()
   
   if(is.character(formula.lmer)) {formula.lmer = as.formula(formula.lmer)}
   
@@ -92,7 +94,9 @@ mlm <- function(
   
   # extract confints (unstd)
   if(!is.null(confint)) {
-    ci = confint(lmer.output, parm = confint, oldNames = FALSE) %>%
+    if(confint == "fixed") {ci.raw = confint(lmer.output, parm = "beta_")}
+    else {ci.raw = confint(lmer.output, parm = confint, oldNames = FALSE)}
+    ci = ci.raw %>%
       as.data.frame() %>%
       dplyr::mutate(
         variable = rownames(.),
@@ -106,16 +110,25 @@ mlm <- function(
       dplyr::slice(match(originalorder, variable))
   }
   
-  if(debug) {print(randomeffects)}
-  if(debug) {print(fixedeffects)}
+  if(debug | print) {
+    print(randomeffects)
+    cat("\n")
+    print(fixedeffects)
+    }
   
-  return(list(random = randomeffects, fixed = fixedeffects))
+  out = list(random = randomeffects, fixed = fixedeffects)
+  if(raw) {out$raw = lmer.output}
+  
+  endtime = Sys.time()
+  if(timer) {cat("\nTime taken: ", endtime - starttime, "seconds\n")}
+  
+  invisible(out)
 }
 
 
 
 mlm.hierarchical <- function(
-  formulae, data, intext_specific = NULL, viewtable = TRUE, csv = NULL, print = TRUE,
+  formulae, data, intext_specific = NULL, viewtable = TRUE, csv = NULL, print = TRUE, raw = TRUE,
   REML = FALSE, switch_optimiser = FALSE, confint = NULL, std = FALSE, round = 5, debug = FALSE) {
   
   if(!is.data.frame(data)) stop("Data should be of class data.frame.")
@@ -142,6 +155,7 @@ mlm.hierarchical <- function(
     
     # prepare model label
     label = paste0("m", n)
+    if(print) {cat("\n-----\n\n", label, "\n")}
     
     # retrieve current formula
     current_formula = formulae[[n]]
@@ -150,7 +164,8 @@ mlm.hierarchical <- function(
     current_result = mlm(
       formula.lmer = current_formula, data = data,
       REML = REML, switch_optimiser = switch_optimiser,
-      confint = confint, std = std, round = round)
+      confint = confint, std = std, round = round,
+      raw = raw, print = print)
     
     # relabel columns
     colnames(current_result$random)[-1] = paste0(label, "_", colnames(current_result$random)[-1])
@@ -172,9 +187,6 @@ mlm.hierarchical <- function(
       if(!is.null(csv)) {write.csv(table_of_outputs, paste0(csv, "_", effect, ".csv", sep = ""), row.names = F)}
     }
   }
-  
-  # if user wants to see printed list, print it
-  if(print) {print(results)}
   
   # if user wants to see intext, print it
   if(!is.null(intext_specific)) {
