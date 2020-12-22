@@ -5,8 +5,8 @@ devtools::source_url("https://raw.githubusercontent.com/nadyaeiou/nadyasscripts/
 
 cat("\n####################")
 cat("\nLoading Nadya's linear regression upgrades (with Amelia and mice+mitml support) from Github.")
-cat("\n            Version : 0.0.1.9000 (for R version 3.6.3)")
-cat("\n        Last update : 23 Dec 2020, 3:38am")
+cat("\n            Version : 0.0.1.9001 (for R version 3.6.3)")
+cat("\n        Last update : 23 Dec 2020, 4:14am")
 cat("\n Loading Package(s) : tidyverse")
 cat("\nRequired Package(s) : broom, car, effectsize, lm.beta, purrr")
 cat("\n")
@@ -378,19 +378,8 @@ regression.hierarchical <- function(
   
   # if user wants to see intext, print it
   if(intext) {
-    # if intext_specific not specified, just run once for each model
-    if(is.null(intext_specific)) {
-      for(n in 1:num_of_models) {
-        cat(intext_regression(regression.output = results[[n]], varname = NULL), "\n")
-      }
-    }
-    # otherwise, if intext_specific is specified, run as many times as it exists for each model
-    else {
-      for(v in intext_specific) {
-        for(n in 1:num_of_models) {
-          cat(intext_regression(regression.output = results[[n]], varname = v), "\n")
-        }
-      }
+    for(n in 1:num_of_models) {
+      cat(intext_regression(regression.output = results[[n]], varname = intext_specific), "\n")
     }
   }
   
