@@ -5,8 +5,8 @@ devtools::source_url("https://raw.githubusercontent.com/nadyaeiou/nadyasscripts/
 
 cat("\n####################")
 cat("\nLoading Nadya's linear regression upgrades (with Amelia and mice+mitml support) from Github.")
-cat("\n            Version : 0.0.1.9001 (for R version 3.6.3)")
-cat("\n        Last update : 23 Dec 2020, 4:14am")
+cat("\n            Version : 0.0.1.9003 (for R version 3.6.3)")
+cat("\n        Last update : 23 Dec 2020, 7:02am")
 cat("\n Loading Package(s) : tidyverse")
 cat("\nRequired Package(s) : broom, car, effectsize, lm.beta, purrr")
 cat("\n")
@@ -117,7 +117,10 @@ regression <- function(
 
 
 
-regressionAmelia <- function(formula.lm, amelia.output = NULL, amelia.data = NULL, intext = FALSE, intext_specific = NULL, only_intext = FALSE, intext_add_intercept = FALSE) {
+regressionAmelia <- function(
+  formula.lm, amelia.output = NULL, amelia.data = NULL,
+  intext = FALSE, intext_specific = NULL, only_intext = FALSE, intext_add_intercept = FALSE,
+  ss_dummy_predictor = FALSE) {
   # handles regression and pooling for EM datasets by Amelia
   
   ##### sub-functions #####
@@ -201,7 +204,14 @@ regressionAmelia <- function(formula.lm, amelia.output = NULL, amelia.data = NUL
   # run regression but with std
   data.amelia.std = data.amelia.unstd
   for(d in 1:nrow(data.amelia.std)) {
-    data.amelia.std$data[[d]] = data.amelia.std$data[[d]] %>% dplyr::mutate_all(scale)
+    # if function is not running ss, carry out std as per normal
+    if(!ss_dummy_predictor) {data.amelia.std$data[[d]] = data.amelia.std$data[[d]] %>% dplyr::mutate_all(scale)}
+    # if function is running ss with dummy predictor, std all EXCEPT dummy predictor cols
+    else {
+      mod_holder = data.amelia.std$data[[d]][, c("modlo", "modhi")]
+      data.amelia.std$data[[d]] = data.amelia.std$data[[d]] %>% dplyr::mutate_all(scale)
+      data.amelia.std$data[[d]][, c("modlo", "modhi")] = mod_holder
+    }
   }
   
   # prepare output table
@@ -219,12 +229,12 @@ regressionAmelia <- function(formula.lm, amelia.output = NULL, amelia.data = NUL
   out[1, "stdcoeff"] = NA
   
   # if user wants to see intext, print it
-  if(intext) {
+  if(intext | only_intext) {
     cat(intext_regression(regression.output = out, varname = intext_specific, add_intercept = intext_add_intercept), "\n\n")
   }
   
   # depending on whether user has chosen to keep only intext or full results, return accordingly
-  if(only_intext) {return(intext_regression(regression.output = out, varname = intext_specific, add_intercept = intext_add_intercept))}
+  if(only_intext) {invisible(intext_regression(regression.output = out, varname = intext_specific, add_intercept = intext_add_intercept))}
   else {return(out)}
 }
 
@@ -379,7 +389,9 @@ regression.hierarchical <- function(
   # if user wants to see intext, print it
   if(intext) {
     for(n in 1:num_of_models) {
-      cat(intext_regression(regression.output = results[[n]], varname = intext_specific), "\n")
+      cat("\nModel", n, "\n")
+      intexts = intext_regression(regression.output = results[[n]], varname = intext_specific)
+      for(i in intexts) {cat(i, "\n")}
     }
   }
   
@@ -451,9 +463,9 @@ simpleslopesAmelia <- function(dv, iv, mod, mod_continuous = FALSE, covars = NUL
     
     # run separate regressions
     cat("When mod = 0:\n")
-    r0 = regressionAmelia(f.0, amelia.data = data.amelia, intext = TRUE, intext_specific = iv, only_intext = TRUE, intext_add_intercept = TRUE)
+    r0 = regressionAmelia(f.0, amelia.data = data.amelia, intext = TRUE, intext_specific = iv, only_intext = TRUE, intext_add_intercept = TRUE, ss_dummy_predictor = TRUE)
     cat("When mod = 1:\n")
-    r1 = regressionAmelia(f.1, amelia.data = data.amelia, intext = TRUE, intext_specific = iv, only_intext = TRUE, intext_add_intercept = TRUE)
+    r1 = regressionAmelia(f.1, amelia.data = data.amelia, intext = TRUE, intext_specific = iv, only_intext = TRUE, intext_add_intercept = TRUE, ss_dummy_predictor = TRUE)
     
   }
   
