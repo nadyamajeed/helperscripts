@@ -2,8 +2,8 @@
 
 cat("\n####################")
 cat("\nLoading Nadya's in-text support for regressions from Github.")
-cat("\n    Version : 0.0.1.9000 (for R version 3.6.3)")
-cat("\nLast update : 23 Dec 2020, 4:02am")
+cat("\n    Version : 0.0.1.9001 (for R version 3.6.3)")
+cat("\nLast update : 23 Dec 2020, 6:57am")
 cat("\n")
 
 library(dplyr)
@@ -100,8 +100,12 @@ intext_regression <- function(
   
   ##### start of main function #####
   
-  if(is.null(varname)) {return(intext_regression_single(regression.output, varname = NULL, round = round, add_beta = add_beta, add_ci = add_ci, add_intercept = add_intercept))}
-  else {for(v in varname) {cat(intext_regression_single(regression.output, varname = v, round = round, add_beta = add_beta, add_ci = add_ci, add_intercept = add_intercept), "\n")}; return(NULL)}
+  if(is.null(varname) | length(varname) == 1) {return(intext_regression_single(regression.output, varname = varname, round = round, add_beta = add_beta, add_ci = add_ci, add_intercept = add_intercept))}
+  else {
+    collated = list()
+    for(v in varname) {collated[[v]] = intext_regression_single(regression.output, varname = v, round = round, add_beta = add_beta, add_ci = add_ci, add_intercept = add_intercept)}
+    return(collated)
+  }
 }
 
 
