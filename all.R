@@ -1,7 +1,7 @@
 cat("\n####################")
 cat("\nLoading Nadya's functions and other QOL upgrades from Github.")
-cat("\n            Version : 0.0.0.9000")
-cat("\n       Last updated : 16 Dec 2020, 7:48am")
+cat("\n            Version : 0.0.1.9000")
+cat("\n       Last updated : 31 Jan 2020, 7:19am")
 cat("\n Loading Package(s) : dplyr")
 cat("\nRequired Package(s) : haven (for write_double and unhaven functions)")
 cat("\n          Option(s) : Prevent scientific notation.")
@@ -83,7 +83,41 @@ dS <- function(varname, label = FALSE, dummy = FALSE, compatible = FALSE) {
 
 
 
-dS.full <- function(data, exclude = NULL, print = TRUE, csv = TRUE, csv_name = "descriptives.csv", debug = FALSE) {
+dS.full <- function(data, exclude = NULL, split = FALSE, print = TRUE, csv = TRUE, csv_name = "descriptives.csv", debug = FALSE) {
+  
+  ##### sub-function to extract descriptives #####
+  
+  dS.full.sub = function(data, vars) {
+    out = data.frame()
+    for(current_var in vars) {
+      
+      # extract values in column
+      current_values = data[, current_var]
+      
+      # check if column is numeric first, proceed if yes, otherwise skip
+      if(is.numeric(current_values)) {
+        
+        # check if column is dummy coded
+        dummycheck = sum(current_values != 0 & current_values != 1, na.rm = T)
+        dummy = ifelse(dummycheck == 0, TRUE, FALSE)
+        
+        # prepare label
+        label = current_var
+        if(dummy) {label = paste(current_var, "(%)")}
+        
+        # run dS for current variable
+        current_dS = dS(current_values, dummy = dummy, compatible = TRUE, label = label)
+        
+        # bind back to table of descriptives
+        out = rbind(out, current_dS)
+      }
+      
+      else {cat("\nSkipping", current_var, "as it is not numeric.\n")}
+    }
+    return(out)
+  }
+  
+  ##### start of main function #####
   
   if(!is.data.frame(data)) stop("Please pass in a data.frame.")
   
@@ -98,42 +132,38 @@ dS.full <- function(data, exclude = NULL, print = TRUE, csv = TRUE, csv_name = "
   vars = colnames(data)
   if(debug) {print(vars)}
   
-  # extract descriptives
-  out = data.frame()
-  for(current_var in vars) {
-    
-    # extract values in column
-    current_values = data[, current_var]
-    
-    # check if column is numeric first, proceed if yes, otherwise skip
-    if(is.numeric(current_values)) {
-      
-      # check if column is dummy coded
-      dummycheck = sum(current_values != 0 & current_values != 1, na.rm = T)
-      dummy = ifelse(dummycheck == 0, TRUE, FALSE)
-      
-      # prepare label
-      label = current_var
-      if(dummy) {label = paste(current_var, "(%)")}
-      
-      # run dS for current variable
-      current_dS = dS(current_values, dummy = dummy, compatible = TRUE, label = label)
-      
-      # bind back to table of descriptives
-      out = rbind(out, current_dS)
+  # extract desc stats
+  if(split == FALSE) {out = dS.full.sub(data = data, vars = vars)}
+  else {
+    out = data.frame()
+    number_of_rows_with_missing_levels = sum(is.na(data[[split]]))
+    if(number_of_rows_with_missing_levels > 0) {
+      cat("\nWarning! Some rows removed due to NA level in grouping variable.\n")
+      data = data[!is.na(data[[split]]), ]
     }
-    
-    else {cat("\nSkipping", current_var, "as it is not numeric.\n")}
+    levels_for_split = unique(data[[split]])
+    for(level in levels_for_split) {
+      out.current = dS.full.sub(
+        data = data[data[[split]] == level, ],
+        vars = vars
+        )
+      colnames(out.current) = paste0(level, "_", colnames(out.current))
+      if(nrow(out) == 0) {out = out.current}
+      else {out = cbind(out, out.current)}
+    }
   }
   
+  # print if requested
   if(print){cat("\n"); print(out)}
   
+  # write csv if requested
   if(csv){
     cat("\nWriting csv into the working directory.\n")
     write.csv(out, csv_name)
     cat("Done!\n")
   }
   
+  # return silently
   invisible(out)
 }
 
