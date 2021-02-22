@@ -5,8 +5,8 @@ devtools::source_url("https://raw.githubusercontent.com/nadyamajeed/helperscript
 
 cat("\n####################")
 cat("\nLoading Nadya's multilevel modelling upgrades from Github.")
-cat("\n            Version : 0.0.0.9003")
-cat("\n        Last update : 21 Dec 2020, 4:28am")
+cat("\n            Version : 0.0.0.9004")
+cat("\n        Last update : 23 Feb 2021, 3:29am")
 cat("\n Loading Package(s) : lme4, lmerTest")
 cat("\nRequired Package(s) : effectsize")
 cat("\n")
@@ -23,7 +23,7 @@ library(lme4); library(lmerTest)
 
 mlm <- function(
   formula.lmer, data, REML = FALSE, switch_optimiser = FALSE,
-  confint = NULL, std = FALSE, round = 5,
+  confint = NULL, std = FALSE, round = 5, test_random = FALSE,
   raw = TRUE, print = TRUE, timer = FALSE, debug = FALSE) {
   
   starttime = Sys.time()
@@ -50,10 +50,13 @@ mlm <- function(
     dplyr::mutate(
       variable = paste0(var1, " | ", grp),
       var = (sdcor * sdcor) %>% round(round),
+      .keep = "none")
+  if(test_random) {
+    randomeffects = dplyr::mutate(
       p = c(NA, lmerTest::rand(lmer.output)[2, "Pr(>Chisq)"] %>% round(3), NA),
-      sig = sigstars(p),
-      .keep = "none"
+      sig = sigstars(p)
     )
+  }
   randomeffects[nrow(randomeffects), "variable"] = "Residual"
   
   # extract fixed effects
@@ -118,7 +121,7 @@ mlm <- function(
     print(randomeffects)
     cat("\n")
     print(fixedeffects)
-    }
+  }
   
   out = list(random = randomeffects, fixed = fixedeffects)
   if(raw) {out$raw = lmer.output}
