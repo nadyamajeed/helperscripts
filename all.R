@@ -1,7 +1,7 @@
 cat("\n####################")
 cat("\nLoading Nadya's functions and other QOL upgrades from Github.")
-cat("\n            Version : 0.0.1.9000")
-cat("\n       Last updated : 31 Jan 2020, 7:19am")
+cat("\n            Version : 0.0.2.9000")
+cat("\n       Last updated : 26 Feb 2021, 8:42pm")
 cat("\n Loading Package(s) : dplyr")
 cat("\nRequired Package(s) : haven (for write_double and unhaven functions)")
 cat("\n          Option(s) : Prevent scientific notation.")
@@ -9,48 +9,18 @@ cat("\n")
 
 starttime = Sys.time()
 
-##########
-
-
-
 library(dplyr)
 options(scipen = 9999)
 
-
-
-roundx <- function(thing_to_round, dp, force = FALSE) {
-  if(!is.logical(force)) stop("'force' must be set to TRUE or FALSE (default FALSE).")
-  number = round(as.numeric(thing_to_round), as.numeric(dp))
-  if(force) {number = format(number, nsmall = dp)}
-  return(number)
-}
-round2 <- function(thing_to_round, force = FALSE) {return(roundx(thing_to_round, 2, force = force))}
-round3 <- function(thing_to_round, force = FALSE) {return(roundx(thing_to_round, 3, force = force))}
-round4 <- function(thing_to_round, force = FALSE) {return(roundx(thing_to_round, 4, force = force))}
-round5 <- function(thing_to_round, force = FALSE) {return(roundx(thing_to_round, 5, force = force))}
+# --------------------------------------------------
 
 
 
-sigstars <- function(pval) {
-  pval = as.numeric(pval)
-  stars = ifelse(
-    pval < .001, "***", ifelse(
-      pval < .01, "**", ifelse(
-        pval < .05, "*", "")))
-  return(stars)
-}
+# ----- descriptives, summarisers, renamers, etc. ----- 
 
 
 
-intext_p <- function(pval) {
-  if(pval > 1) {stop("pval > 1. Are you sure you passed in a p-value?")}
-  if(pval < 0) {stop("pval < 0. Are you sure you passed in a p-value?")}
-  return(ifelse(pval < .001, "p < .001", paste0("p = ", round3(pval, force = TRUE), sep = "")))
-}
-
-
-
-dS <- function(varname, label = FALSE, dummy = FALSE, compatible = FALSE) {
+descStats = function(varname, label = FALSE, dummy = FALSE, compatible = FALSE) {
   
   n = sum(!is.na(varname))
   
@@ -83,11 +53,11 @@ dS <- function(varname, label = FALSE, dummy = FALSE, compatible = FALSE) {
 
 
 
-dS.full <- function(data, exclude = NULL, split = FALSE, print = TRUE, csv = TRUE, csv_name = "descriptives.csv", debug = FALSE) {
+descStats.full = function(data, exclude = NULL, split = FALSE, print = TRUE, csv = TRUE, csv_name = "descriptives.csv", debug = FALSE) {
   
   ##### sub-function to extract descriptives #####
   
-  dS.full.sub = function(data, vars) {
+  descStats.full.sub = function(data, vars) {
     out = data.frame()
     for(current_var in vars) {
       
@@ -105,11 +75,11 @@ dS.full <- function(data, exclude = NULL, split = FALSE, print = TRUE, csv = TRU
         label = current_var
         if(dummy) {label = paste(current_var, "(%)")}
         
-        # run dS for current variable
-        current_dS = dS(current_values, dummy = dummy, compatible = TRUE, label = label)
+        # run descStats for current variable
+        current_descStats = descStats(current_values, dummy = dummy, compatible = TRUE, label = label)
         
         # bind back to table of descriptives
-        out = rbind(out, current_dS)
+        out = rbind(out, current_descStats)
       }
       
       else {cat("\nSkipping", current_var, "as it is not numeric.\n")}
@@ -133,7 +103,7 @@ dS.full <- function(data, exclude = NULL, split = FALSE, print = TRUE, csv = TRU
   if(debug) {print(vars)}
   
   # extract desc stats
-  if(split == FALSE) {out = dS.full.sub(data = data, vars = vars)}
+  if(split == FALSE) {out = descStats.full.sub(data = data, vars = vars)}
   else {
     out = data.frame()
     number_of_rows_with_missing_levels = sum(is.na(data[[split]]))
@@ -143,10 +113,10 @@ dS.full <- function(data, exclude = NULL, split = FALSE, print = TRUE, csv = TRU
     }
     levels_for_split = unique(data[[split]])
     for(level in levels_for_split) {
-      out.current = dS.full.sub(
+      out.current = descStats.full.sub(
         data = data[data[[split]] == level, ],
         vars = vars
-        )
+      )
       colnames(out.current) = paste0(level, "_", colnames(out.current))
       if(nrow(out) == 0) {out = out.current}
       else {out = cbind(out, out.current)}
@@ -169,7 +139,7 @@ dS.full <- function(data, exclude = NULL, split = FALSE, print = TRUE, csv = TRU
 
 
 
-dS.split <- function(varname, group, levels = NULL, labels = NULL) {
+descStats.split = function(varname, group, levels = NULL, labels = NULL) {
   
   # if levels not specified, automatically retrieve levels
   if(is.null(levels)) {
@@ -180,20 +150,20 @@ dS.split <- function(varname, group, levels = NULL, labels = NULL) {
     levels = levels(group)
   }
   
-  # extract dS for each level
+  # extract descStats for each level
   out = data.frame()
-  for(level in levels) {out = rbind(out, dS(varname[group == level], label = level))}
+  for(level in levels) {out = rbind(out, descStats(varname[group == level], label = level))}
   
   # replace labels if requested
   if(!is.null(labels)) {rownames(out) = labels}
   
-  # return split dS
+  # return split descStats
   return(out)
 }
 
 
 
-frequencies <- function(varname) {
+frequencies = function(varname) {
   table(varname) %>% as.data.frame() %>%
     dplyr::mutate(
       value = varname,
@@ -204,7 +174,61 @@ frequencies <- function(varname) {
 
 
 
-winsorSD <- function(values, numSD = 3, debug = FALSE) {
+rename_pattern = function(data.frame, find, replace = "") {
+  # takes in a data.frame, finds patterns in col names and replaces them
+  # useful for adding into a dplyr chain (instead of having a separate colnames() line at the end)
+  if(class(find) != "character" | class(replace) != "character") stop("Patterns should be given as character.")
+  colnames(data.frame) = sub(find, replace, colnames(data.frame))
+  return(data.frame)
+}
+
+
+
+# the following functions are to allow back-compatibility
+attach(list(
+  dS = function(...) {warning("Function is deprecated. Use descStats() instead."); descStats(...)},
+  dS.full = function(...) {warning("Function is deprecated. Use descStats.full() instead."); descStats.full(...)},
+  dS.split = function(...) {warning("Function is deprecated. Use descStats.split() instead."); descStats.split(...)}
+), name = "deprecatedHelperScripts")
+
+
+
+# ----- data manipulation ----- 
+
+
+
+centre = function(column) {scale(column, center = TRUE, scale = FALSE)}
+
+
+
+dichotomise = function(column, missing = NA_real_) {
+  # converts continuous variable into dichotomous/binary variable
+  # useful for converting durations or counts into occurences (yes/no)
+  # e.g., from number of stressors (count) to stressor exposure (exposed/not exposed)
+  # e.g., from music listening duration (0h - 24h) to music listening status (listened/did not listen)
+  dplyr::case_when(
+    column > 0 ~ 1,
+    column == 0 ~ 0,
+    is.na(column) ~ missing
+  )
+}
+
+
+
+roundx = function(thing_to_round, dp, force = FALSE) {
+  if(!is.logical(force)) stop("'force' must be set to TRUE or FALSE (default FALSE).")
+  number = round(as.numeric(thing_to_round), as.numeric(dp))
+  if(force) {number = format(number, nsmall = dp)}
+  return(number)
+}
+round2 = function(thing_to_round, force = FALSE) {return(roundx(thing_to_round, 2, force = force))}
+round3 = function(thing_to_round, force = FALSE) {return(roundx(thing_to_round, 3, force = force))}
+round4 = function(thing_to_round, force = FALSE) {return(roundx(thing_to_round, 4, force = force))}
+round5 = function(thing_to_round, force = FALSE) {return(roundx(thing_to_round, 5, force = force))}
+
+
+
+winsorSD = function(values, numSD = 3, debug = FALSE) {
   m = mean(values, na.rm = TRUE)
   oneSD = sd(values, na.rm = TRUE)
   if(debug){cat("\nMean = ", m, ", SD = ", oneSD, "\n", sep = "")}
@@ -222,7 +246,43 @@ winsorSD <- function(values, numSD = 3, debug = FALSE) {
 
 
 
-write_double <- function(data, filename) {
+# ----- significance testing ----- 
+
+
+
+intext_p = function(pval) {
+  if(pval > 1) {stop("pval > 1. Are you sure you passed in a p-value?")}
+  if(pval < 0) {stop("pval < 0. Are you sure you passed in a p-value?")}
+  return(ifelse(pval < .001, "p < .001", paste0("p = ", round3(pval, force = TRUE), sep = "")))
+}
+
+
+
+sigstars = function(pval) {
+  pval = as.numeric(pval)
+  stars = dplyr::case_when(
+    pval < .001 ~ "***",
+    pval < .01  ~ "**",
+    pval < .05  ~ "*",
+    TRUE        ~ ""
+  )
+  return(stars)
+}
+
+
+
+# ----- import & export ----- 
+
+
+
+unhaven = function(data) {
+  return(data %>% haven::zap_labels() %>% haven::zap_label() %>% as.data.frame())
+}
+
+
+
+write_double = function(data, filename) {
+  # writes both .csv and .sav files at once
   write.csv(data, paste0(filename, ".csv"), row.names = F)
   haven::write_sav(data, paste0(filename, ".sav"))
   cat("csv and sav files have been written to the working directory.\n")
@@ -231,13 +291,7 @@ write_double <- function(data, filename) {
 
 
 
-unhaven <- function(data) {
-  return(data %>% haven::zap_labels() %>% haven::zap_label() %>% as.data.frame())
-}
-
-
-
-##########
+# --------------------------------------------------
 
 endtime = Sys.time()
 cat("\nFinished loading Nadya's QOL upgrades.")
