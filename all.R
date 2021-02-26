@@ -1,7 +1,7 @@
 cat("\n####################")
 cat("\nLoading Nadya's functions and other QOL upgrades from Github.")
-cat("\n            Version : 0.0.2.9001")
-cat("\n       Last updated : 26 Feb 2021, 8:42pm")
+cat("\n            Version : 0.0.2.9002")
+cat("\n       Last updated : 27 Feb 2021, 4:09am")
 cat("\n Loading Package(s) : dplyr")
 cat("\nRequired Package(s) : haven (for write_double and unhaven functions)")
 cat("\n          Option(s) : Prevent scientific notation.")
@@ -185,7 +185,7 @@ rename_pattern = function(data.frame, find, replace = "") {
 
 
 # the following functions are to allow back-compatibility
-detach(deprecatedHelperScripts)
+try(detach(deprecatedHelperScripts))
 attach(list(
   dS = function(...) {warning("Function is deprecated. Use descStats() instead."); descStats(...)},
   dS.full = function(...) {warning("Function is deprecated. Use descStats.full() instead."); descStats.full(...)},
