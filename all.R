@@ -1,7 +1,7 @@
 cat("\n####################")
 cat("\nLoading Nadya's functions and other QOL upgrades from Github.")
-cat("\n            Version : 0.0.3.9000")
-cat("\n       Last updated : 27 Feb 2021, 4:14am")
+cat("\n            Version : 0.0.3.9001")
+cat("\n       Last updated : 27 Feb 2021, 4:17am")
 cat("\n Loading Package(s) : dplyr")
 cat("\nRequired Package(s) : haven (for write_double and unhaven functions)")
 cat("\n          Option(s) : Prevent scientific notation.")
@@ -279,7 +279,7 @@ sigstars = function(pval) {
 strip_qualtrics = function(data) {
   data %>% dplyr::select(
     -Status, -IPAddress, -Finished, -RecordedDate,
-    -RecipientLastName, -RecipientFirstName -RecipientEmail,
+    -RecipientLastName, -RecipientFirstName, -RecipientEmail,
     -LocationLatitude, -LocationLongitude, -UserLanguage)
 }
 
