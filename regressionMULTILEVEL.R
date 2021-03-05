@@ -5,13 +5,13 @@ devtools::source_url("https://raw.githubusercontent.com/nadyamajeed/helperscript
 
 cat("\n####################")
 cat("\nLoading Nadya's multilevel modelling upgrades from Github.")
-cat("\n            Version : 0.0.0.9004")
-cat("\n        Last update : 23 Feb 2021, 3:29am")
+cat("\n            Version : 0.0.1.9000")
+cat("\n        Last update : 5 Mar 2021, 9:24pm")
 cat("\n Loading Package(s) : lme4, lmerTest")
 cat("\nRequired Package(s) : effectsize")
 cat("\n")
 
-starttime <- Sys.time()
+starttime = Sys.time()
 
 ##########
 
@@ -21,9 +21,9 @@ library(lme4); library(lmerTest)
 
 
 
-mlm <- function(
+mlm = function(
   formula.lmer, data, REML = FALSE, switch_optimiser = FALSE,
-  confint = NULL, std = FALSE, round = 5, test_random = FALSE,
+  confint = NULL, std = FALSE, round = 5, test_random = FALSE, bonferroni = NULL,
   raw = TRUE, print = TRUE, timer = FALSE, debug = FALSE) {
   
   starttime = Sys.time()
@@ -40,7 +40,7 @@ mlm <- function(
   lmer.summary = summary(lmer.output)
   
   # internal function to convert to data.frame and suppress class change warnings
-  convert.to.data.frame <- function(thing_to_convert) {
+  convert.to.data.frame = function(thing_to_convert) {
     suppressWarnings(as.data.frame(thing_to_convert))
   }
   
@@ -60,6 +60,7 @@ mlm <- function(
   randomeffects[nrow(randomeffects), "variable"] = "Residual"
   
   # extract fixed effects
+  # with bonferroni correction if needed
   fixedeffects = lmer.summary[["coefficients"]] %>% convert.to.data.frame() %>%
     dplyr::mutate(
       variable = rownames(.),
@@ -67,8 +68,22 @@ mlm <- function(
       se = `Std. Error` %>% round(round),
       p = `Pr(>|t|)` %>% round(3),
       sig = sigstars(p),
+      p.temp = `Pr(>|t|)`,
       .keep = "none"
     )
+  
+  # add bonferroni correction if needed
+  if(!is.null(bonferroni)) {
+    fixedeffects = fixedeffects %>%
+      dplyr::mutate(
+        p.adj = (p.temp * bonferroni) %>% round(3),
+        sig.adj = sigstars(p.adj),
+        .keep = "unused"
+      )
+  } else {
+    fixedeffects = fixedeffects %>%
+      dplyr::mutate(p.temp = NULL)
+  }
   
   # add std coeffs if requested
   if(std) {
@@ -134,9 +149,9 @@ mlm <- function(
 
 
 
-mlm.hierarchical <- function(
+mlm.hierarchical = function(
   formulae, data, intext_specific = NULL, viewtable = TRUE, csv = NULL, print = TRUE, raw = TRUE,
-  REML = FALSE, switch_optimiser = FALSE, confint = NULL, std = FALSE, round = 5, debug = FALSE) {
+  REML = FALSE, switch_optimiser = FALSE, confint = NULL, std = FALSE, round = 5, bonferroni = NULL, debug = FALSE) {
   
   if(!is.data.frame(data)) stop("Data should be of class data.frame.")
   if(!is.null(csv)) {
@@ -171,7 +186,7 @@ mlm.hierarchical <- function(
     current_result = mlm(
       formula.lmer = current_formula, data = data,
       REML = REML, switch_optimiser = switch_optimiser,
-      confint = confint, std = std, round = round,
+      confint = confint, std = std, round = round, bonferroni = bonferroni,
       raw = raw, print = print)
     
     # relabel columns
@@ -213,7 +228,7 @@ mlm.hierarchical <- function(
 
 ##########
 
-endtime <- Sys.time()
+endtime = Sys.time()
 cat("\nFinished loading Nadya's multilevel modelling upgrades.")
 cat("\nTime taken :", (endtime - starttime))
 cat("\n! NOTE ! Please cite lme4 (conducting multilevel) and lmerTest (significance testing) in your manuscript.")
