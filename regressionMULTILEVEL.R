@@ -5,19 +5,77 @@ devtools::source_url("https://raw.githubusercontent.com/nadyamajeed/helperscript
 
 cat("\n####################")
 cat("\nLoading Nadya's multilevel modelling upgrades from Github.")
-cat("\n            Version : 0.0.1.9000")
-cat("\n        Last update : 5 Mar 2021, 9:24pm")
+cat("\n            Version : 0.0.2.9000")
+cat("\n        Last update : 7 Mar 2021, 9:54pm")
 cat("\n Loading Package(s) : lme4, lmerTest")
-cat("\nRequired Package(s) : effectsize")
+cat("\nRequired Package(s) : effectsize (std coeffs), purrr (repeated alphas)")
 cat("\n")
 
 starttime = Sys.time()
+
+library(lme4); library(lmerTest)
 
 ##########
 
 
 
-library(lme4); library(lmerTest)
+alpha_repeated = function(search_start, time_colname, data, check_keys = FALSE, round = 2) {
+  
+  # check format
+  if(!is.character(search_start)) stop("search_start should be of class character.")
+  if(!is.character(time_colname)) stop("time_colname should be of class character.")
+  if(length(time_colname) > 1) stop("time_colname should be of length 1.")
+  
+  # report whether check_keys is TRUE or FALSE
+  if(check_keys) {cat("!! check_keys is set to TRUE. Please be careful. Items may be wrongly reversed. !!\n")}
+  else {cat("!! check_keys is set to FALSE. Please ensure items have already been reversed if needed. !!\n")}
+  
+  # only keep relevant columns in the data and sort by timepoint
+  data = data %>% dplyr::select(all_of(time_colname), starts_with(search_start))
+  data = data[order(data[time_colname, ])]
+  
+  # split data into subsets based on timepoint
+  data_split = split(data %>% dplyr::select(-time_colname), data[, time_colname])
+  
+  # compute alphas for each timepoint
+  alpha_cleaner = function(df) {
+    a = psych::alpha(x = df, check.keys = check_keys)
+    return(a$total$raw_alpha %>% round(round))
+  }
+  all_alphas = purrr::map(data_split, purrr::quietly(alpha_cleaner))
+  
+  # keep the actual value of alpha
+  all_values = vector()
+  for(i in all_alphas) {all_values = c(all_values, i[["result"]])}
+  
+  # keep warning messages
+  squeeze_warnings = function(vector_of_warnings) {
+    if(length(vector_of_warnings) == 0) {return(NA_character_)}
+    else {squeezed = vector_of_warnings[1]}
+    if(length(vector_of_warnings > 1)) {
+      for(i in 2:length(vector_of_warnings)) {squeezed = paste0(squeezed, vector_of_warnings[i])}
+    }
+    return(squeezed)
+  }
+  all_warnings = vector()
+  for(i in all_alphas) {all_warnings = c(all_warnings, squeeze_warnings(i[["warnings"]]))}
+  
+  # prepare output
+  collated_info = data.frame(
+    timepoint = names(all_alphas),
+    alpha = all_values,
+    warning = all_warnings
+  )
+  
+  # print summarised results and invisibly return full output
+  cat("Range of alphas is [", min(collated_info$alpha), ",", max(collated_info$alpha), "]\n")
+  if(sum(!is.na(collated_info$warning)) > 0) {
+    warning("There are warnings! Please view full output to check.")
+    View(collated_info)
+  }
+  invisible(collated_info)
+  
+}
 
 
 
