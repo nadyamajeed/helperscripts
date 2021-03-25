@@ -1,7 +1,7 @@
 cat("\n####################")
 cat("\nLoading Nadya's functions and other QOL upgrades from Github.")
-cat("\n            Version : 0.0.3.9001")
-cat("\n       Last updated : 27 Feb 2021, 4:17am")
+cat("\n            Version : 0.0.3.9002")
+cat("\n       Last updated : 25 Mar 2021, 3:40pm")
 cat("\n Loading Package(s) : dplyr")
 cat("\nRequired Package(s) : haven (for write_double and unhaven functions)")
 cat("\n          Option(s) : Prevent scientific notation.")
@@ -10,7 +10,7 @@ cat("\n")
 starttime = Sys.time()
 
 library(dplyr)
-options(scipen = 9999)
+options(scipen = 99999)
 
 # --------------------------------------------------
 
@@ -90,6 +90,9 @@ descStats.full = function(data, exclude = NULL, split = FALSE, print = TRUE, csv
   ##### start of main function #####
   
   if(!is.data.frame(data)) stop("Please pass in a data.frame.")
+  
+  # force format back (sometimes data cleaning messes with the format)
+  data = as.data.frame(data)
   
   # exclude variables if requested
   if(!is.null(exclude)) {
@@ -198,7 +201,7 @@ attach(list(
 
 
 
-centre = function(column) {scale(column, center = TRUE, scale = FALSE)}
+centre = function(column) {scale(column, center = TRUE, scale = FALSE) %>% as.numeric()}
 
 
 
@@ -242,7 +245,7 @@ winsorSD = function(values, numSD = 3, debug = FALSE) {
   out = values
   out[out < lowerbound] = lowerbound
   out[out > upperbound] = upperbound
-  invisible(out)
+  return(out)
 }
 
 
@@ -296,7 +299,7 @@ write_double = function(data, filename) {
   write.csv(data, paste0(filename, ".csv"), row.names = F)
   haven::write_sav(data, paste0(filename, ".sav"))
   cat("csv and sav files have been written to the working directory.\n")
-  invisible(data)
+  return(invisible(data))
 }
 
 
