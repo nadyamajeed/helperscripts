@@ -5,10 +5,10 @@ devtools::source_url("https://raw.githubusercontent.com/nadyamajeed/helperscript
 
 cat("\n####################")
 cat("\nLoading Nadya's multilevel modelling upgrades from Github.")
-cat("\n            Version : 0.0.2.9000")
-cat("\n        Last update : 7 Mar 2021, 9:54pm")
-cat("\n Loading Package(s) : lme4, lmerTest")
-cat("\nRequired Package(s) : effectsize (std coeffs), purrr (repeated alphas)")
+cat("\n            Version : 0.0.2.9001")
+cat("\n        Last update : 27 Mar 2021, 12:48am")
+cat("\n Loading Package(s) : lme4 (written for 1.1-23), lmerTest (written for 3.1-2)")
+cat("\nRequired Package(s) : effectsize (std coeffs), psych and purrr (repeated alphas)")
 cat("\n")
 
 starttime = Sys.time()
@@ -80,20 +80,32 @@ alpha_repeated = function(search_start, time_colname, data, check_keys = FALSE, 
 
 
 mlm = function(
-  formula.lmer, data, REML = FALSE, switch_optimiser = FALSE,
-  confint = NULL, std = FALSE, round = 5, test_random = FALSE, bonferroni = NULL,
-  raw = TRUE, print = TRUE, timer = FALSE, debug = FALSE) {
+  formula.lmer, data, REML = FALSE, switch_optimiser = FALSE, switch_optimiser2 = FALSE,
+  csv = NULL, raw = TRUE, confint = NULL, std = FALSE, round = 5, test_random = FALSE, bonferroni = NULL,
+  print = TRUE, timer = FALSE, debug = FALSE) {
+  
+  # check for csv
+  if(!is.null(csv)) {
+    if(grepl(".csv", csv)) stop("You have indicated that you want a .csv output. Please ensure your filename (passed to csv argument) DOES NOT have any format ending (including .csv). If you do not want a .csv output, omit the csv argument.")
+  }
   
   starttime = Sys.time()
   
   if(is.character(formula.lmer)) {formula.lmer = as.formula(formula.lmer)}
   
   # fix for convergence errors
-  optimiser.switch = lmerControl(optimizer = "Nelder_Mead", optCtrl = list(maxfun = 10000000))
-  if(switch_optimiser) {cat("Using Nelder-Mead optimisation with maximum 10,000,000 evaluations\ninstead of default nloptwrap.\n\n")}
+  if(switch_optimiser & switch_optimiser2) {stop("Both optimiser switch options set to TRUE. Please set one to FALSE (or both to FALSE to use default).")}
+  if(switch_optimiser) {
+    optSwitch = lmerControl(optimizer = "Nelder_Mead", optCtrl = list(maxfun = 10000000))
+    cat("Using Nelder-Mead optimisation with maximum 10,000,000 evaluations\ninstead of default nloptwrap.\n\n")
+  }
+  if(switch_optimiser2) {
+    optSwitch = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 10000000))
+    cat("Using bobyqa optimisation with maximum 10,000,000 evaluations\ninstead of default nloptwrap.\n\n")
+  }
   
   # run multilevel and summarise
-  if(switch_optimiser) {lmer.output = lmer(formula.lmer, data = data, REML = REML, control = optimiser.switch)}
+  if(switch_optimiser | switch_optimiser2) {lmer.output = lmer(formula.lmer, data = data, REML = REML, control = optSwitch)}
   else {lmer.output = lmer(formula.lmer, data = data, REML = REML)}
   lmer.summary = summary(lmer.output)
   
@@ -146,7 +158,7 @@ mlm = function(
   # add std coeffs if requested
   if(std) {
     cat("Standardised coeffs calculated at level 1.\n\n")
-    if(switch_optimiser) {std.output = lmer(formula.lmer, data = effectsize::standardize(data), REML = REML, control = optimiser.switch)}
+    if(switch_optimiser | switch_optimiser2) {std.output = lmer(formula.lmer, data = effectsize::standardize(data), REML = REML, control = optSwitch)}
     else {std.output = lmer(formula.lmer, data = effectsize::standardize(data), REML = REML)}
     
     # random effects
@@ -196,20 +208,36 @@ mlm = function(
     print(fixedeffects)
   }
   
+  # prepare output
   out = list(random = randomeffects, fixed = fixedeffects)
   if(raw) {out$raw = lmer.output}
+  
+  # if user wants to write csv, prepare table and execute accordingly
+  if(!is.null(csv)) {
+    for(effect in c("random", "fixed")) {
+      write.csv(out[[effect]], paste0(csv, "_", effect, ".csv", sep = ""), row.names = F)
+    }
+  }
+  
+  # if user wants to see intext, print it
+  if(!is.null(intext_specific)) {
+    for(variable in intext_specific) {
+      cat(intext_regression(regression.output = out[["fixed"]], varname = variable, round = round), "\n")
+    }
+  }
   
   endtime = Sys.time()
   if(timer) {cat("\nTime taken: ", endtime - starttime, "seconds\n")}
   
-  invisible(out)
+  return(invisible(out))
 }
 
 
 
 mlm.hierarchical = function(
-  formulae, data, intext_specific = NULL, viewtable = TRUE, csv = NULL, print = TRUE, raw = TRUE,
-  REML = FALSE, switch_optimiser = FALSE, confint = NULL, std = FALSE, round = 5, bonferroni = NULL, debug = FALSE) {
+  formulae, data, REML = FALSE, switch_optimiser = FALSE, switch_optimiser2 = FALSE,
+  intext_specific = NULL, viewtable = TRUE, csv = NULL, print = TRUE, raw = TRUE,
+  confint = NULL, std = FALSE, round = 5, bonferroni = NULL, debug = FALSE) {
   
   if(!is.data.frame(data)) stop("Data should be of class data.frame.")
   if(!is.null(csv)) {
@@ -243,7 +271,7 @@ mlm.hierarchical = function(
     # run regression for current model
     current_result = mlm(
       formula.lmer = current_formula, data = data,
-      REML = REML, switch_optimiser = switch_optimiser,
+      REML = REML, switch_optimiser = switch_optimiser, switch_optimiser2 = switch_optimiser2, csv = NULL,
       confint = confint, std = std, round = round, bonferroni = bonferroni,
       raw = raw, print = print)
     
@@ -279,7 +307,7 @@ mlm.hierarchical = function(
   }
   
   # silently return list
-  invisible(results)
+  return(invisible(results))
 }
 
 
