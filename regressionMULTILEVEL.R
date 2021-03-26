@@ -5,8 +5,8 @@ devtools::source_url("https://raw.githubusercontent.com/nadyamajeed/helperscript
 
 cat("\n####################")
 cat("\nLoading Nadya's multilevel modelling upgrades from Github.")
-cat("\n            Version : 0.0.2.9001")
-cat("\n        Last update : 27 Mar 2021, 12:48am")
+cat("\n            Version : 0.0.2.9002 (for R version 3.6.3)")
+cat("\n        Last update : 27 Mar 2021, 1:22am")
 cat("\n Loading Package(s) : lme4 (written for 1.1-23), lmerTest (written for 3.1-2)")
 cat("\nRequired Package(s) : effectsize (std coeffs), psych and purrr (repeated alphas)")
 cat("\n")
@@ -81,7 +81,7 @@ alpha_repeated = function(search_start, time_colname, data, check_keys = FALSE, 
 
 mlm = function(
   formula.lmer, data, REML = FALSE, switch_optimiser = FALSE, switch_optimiser2 = FALSE,
-  csv = NULL, raw = TRUE, confint = NULL, std = FALSE, round = 5, test_random = FALSE, bonferroni = NULL,
+  csv = NULL, raw = TRUE, confint = NULL, std = FALSE, round = 5, test_random = FALSE, bonferroni = NULL, intext_specific = NULL,
   print = TRUE, timer = FALSE, debug = FALSE) {
   
   # check for csv
