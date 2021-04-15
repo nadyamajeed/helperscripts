@@ -1,7 +1,7 @@
 cat("\n####################")
 cat("\nLoading Nadya's functions and other QOL upgrades from Github.")
-cat("\n            Version : 0.0.3.9002")
-cat("\n       Last updated : 25 Mar 2021, 3:40pm")
+cat("\n            Version : 0.0.3.9003")
+cat("\n       Last updated : 15 Apr 2021, 3:48pm")
 cat("\n Loading Package(s) : dplyr")
 cat("\nRequired Package(s) : haven (for write_double and unhaven functions)")
 cat("\n          Option(s) : Prevent scientific notation.")
@@ -64,25 +64,30 @@ descStats.full = function(data, exclude = NULL, split = FALSE, print = TRUE, csv
       # extract values in column
       current_values = data[, current_var]
       
-      # check if column is numeric first, proceed if yes, otherwise skip
-      if(is.numeric(current_values)) {
+      # check if column is non-empty first, proceed if non-empty, else (empty) skip
+      if(sum(is.na(current_values)) != length(current_values)) {
         
-        # check if column is dummy coded
-        dummycheck = sum(current_values != 0 & current_values != 1, na.rm = T)
-        dummy = ifelse(dummycheck == 0, TRUE, FALSE)
+        # check if column is numeric first, proceed if yes, otherwise skip
+        if(is.numeric(current_values)) {
+          
+          # check if column is dummy coded
+          dummycheck = sum(current_values != 0 & current_values != 1, na.rm = T)
+          dummy = ifelse(dummycheck == 0, TRUE, FALSE)
+          
+          # prepare label
+          label = current_var
+          if(dummy) {label = paste(current_var, "(%)")}
+          
+          # run descStats for current variable
+          current_descStats = descStats(current_values, dummy = dummy, compatible = TRUE, label = label)
+          
+          # bind back to table of descriptives
+          out = rbind(out, current_descStats)
+        }
         
-        # prepare label
-        label = current_var
-        if(dummy) {label = paste(current_var, "(%)")}
-        
-        # run descStats for current variable
-        current_descStats = descStats(current_values, dummy = dummy, compatible = TRUE, label = label)
-        
-        # bind back to table of descriptives
-        out = rbind(out, current_descStats)
+        else {cat("\nSkipping", current_var, "as it is not numeric.\n")}
       }
-      
-      else {cat("\nSkipping", current_var, "as it is not numeric.\n")}
+      else {cat("\nSkipping", current_var, "as it is empty.\n")}
     }
     return(out)
   }
