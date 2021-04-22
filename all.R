@@ -1,7 +1,7 @@
 cat("\n####################")
 cat("\nLoading Nadya's functions and other QOL upgrades from Github.")
-cat("\n            Version : 0.0.3.9003")
-cat("\n       Last updated : 15 Apr 2021, 3:48pm")
+cat("\n            Version : 0.0.4.9000")
+cat("\n       Last updated : 22 Apr 2021, 10:10pm")
 cat("\n Loading Package(s) : dplyr")
 cat("\nRequired Package(s) : haven (for write_double and unhaven functions)")
 cat("\n          Option(s) : Prevent scientific notation.")
@@ -280,6 +280,95 @@ sigstars = function(pval) {
 
 
 
+# ----- zero-order correlation matrix ----- 
+
+
+
+better_cormatrix = function(data, first = NULL, include = NULL, exclude = NULL, pval_output = c("star", "matrix", "none"), csv_name = NULL) {
+  
+  ##### sub-function to fix colnames and rownames #####
+  
+  fix_matrix_names = function(d) {
+    rownames(d) = paste0(c(1:nrow(d)), ". ", rownames(d))
+    colnames(d) = c(1:ncol(d))
+    d[ncol(d)] = NULL
+    return(d)
+  }
+  
+  ##### start of main function #####
+  
+  # check arguments
+  if(!is.null(first) & !is.null(include)) if(!(first %in% include)) stop("first is not in include. Please fix.")
+  if(!is.null(include)) if(length(include) < 2) stop("Too few columns in include.")
+  if(!is.null(include) & !is.null(exclude)) stop("Can't have both include and exclude arguments. Omit one.")
+  if(!is.null(csv_name)) if(!grepl(".csv", csv_name)) stop("Ensure csv_name ends in .csv. If you do not want a csv, leave this argument blank.")
+  if((length(pval_output) > 1) | !(pval_output %in% c("star", "matrix", "none"))) {pval_output = pval_output[1]; warning("pval_output not specified or invalid. Using star output")}
+  
+  # reorder variables if needed
+  if(is.null(first)) {d.zoc = data} else {d.zoc = data %>% dplyr::select(first, everything())}
+  
+  # include/exclude variables if needed
+  if(!is.null(include)) {d.zoc = d.zoc %>% dplyr::select(all_of(include))}
+  if(!is.null(exclude)) {d.zoc = d.zoc %>% dplyr::select(-all_of(exclude))}
+  
+  # generate correlation matrix
+  cormatrix = cor(d.zoc, use = "pairwise.complete.obs") %>% as.data.frame()
+  
+  # erase cells that aren't needed and check significance
+  vars_done = NULL
+  for(var in colnames(cormatrix)) {
+    # track which vars are done
+    vars_done = c(vars_done, var)
+    # erase the wrong side of the diagonal
+    cormatrix[vars_done, var] = NA
+    # format nicely to 2dp
+    cormatrix[, var] = round(cormatrix[, var], 2)
+    # if pval_output is set to "star", add stars
+    if(pval_output == "star") {
+      for(var2 in colnames(cormatrix)) if(!(var2 %in% vars_done)) {
+        pval = cor.test(d.zoc[,var], d.zoc[,var2])$p.value
+        star = sigstars(pval)
+        cormatrix[var2, var] = paste0(cormatrix[var2, var], star)
+      }
+    }
+  }; rm(var); rm(vars_done)
+  
+  # fix colnames and rownames
+  cormatrix = fix_matrix_names(cormatrix)
+  
+  # if pval_output is set to "matrix", generate and clean matrix
+  if(pval_output == "matrix") {
+    pmatrix = cor(d.zoc, use = "pairwise.complete.obs") %>% as.data.frame()
+    vars_done = NULL
+    for(var in colnames(pmatrix)) {
+      # track which vars are done
+      vars_done = c(vars_done, var)
+      # erase the wrong side of the diagonal
+      pmatrix[vars_done, var] = NA
+      # replace with pvals
+      for(var2 in colnames(pmatrix)) if(!(var2 %in% vars_done)) {
+        pval = cor.test(d.zoc[,var], d.zoc[,var2])$p.value %>% round(3)
+        pmatrix[var2, var] = pval
+      }
+    }; rm(var); rm(vars_done)
+    # fix colnames and rownames
+    pmatrix = fix_matrix_names(pmatrix)
+  }
+  
+  # write matrix to csv if asked for
+  if(!is.null(csv_name)) {
+    write.csv(cormatrix, csvname, row.names = T)
+    if(pval_output == "matrix") write.csv(pmatrix, paste0("pvals_", csvname), row.names = T)
+  }
+  
+  # return cormatrix
+  if(pval_output == "matrix") return(list("corr" = cormatrix, "pval" = pmatrix))
+  else return(cormatrix)
+  
+}
+
+
+
 # ----- import & export ----- 
 
 
@@ -293,9 +382,7 @@ strip_qualtrics = function(data) {
 
 
 
-unhaven = function(data) {
-  data %>% haven::zap_labels() %>% haven::zap_label() %>% as.data.frame()
-}
+unhaven = function(data) {data %>% haven::zap_labels() %>% haven::zap_label() %>% as.data.frame()}
 
 
 
