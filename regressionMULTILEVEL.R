@@ -5,9 +5,9 @@ devtools::source_url("https://raw.githubusercontent.com/nadyamajeed/helperscript
 
 cat("\n####################")
 cat("\nLoading Nadya's multilevel modelling upgrades from Github.")
-cat("\n            Version : 0.0.2.9002 (for R version 3.6.3)")
-cat("\n        Last update : 27 Mar 2021, 1:22am")
-cat("\n Loading Package(s) : lme4 (written for 1.1-23), lmerTest (written for 3.1-2)")
+cat("\n            Version : 0.0.2.9003 (for R version 3.6.3)")
+cat("\n        Last update : 30 Apr 2021, 3:11am")
+cat("\n Loading Package(s) : lme4 (written for 1.1-26), lmerTest (written for 3.1-3)")
 cat("\nRequired Package(s) : effectsize (std coeffs), psych and purrr (repeated alphas)")
 cat("\n")
 
@@ -73,7 +73,7 @@ alpha_repeated = function(search_start, time_colname, data, check_keys = FALSE, 
     warning("There are warnings! Please view full output to check.")
     View(collated_info)
   }
-  invisible(collated_info)
+  return(invisible(collated_info))
   
 }
 
@@ -82,15 +82,22 @@ alpha_repeated = function(search_start, time_colname, data, check_keys = FALSE, 
 mlm = function(
   formula.lmer, data, REML = FALSE, switch_optimiser = FALSE, switch_optimiser2 = FALSE,
   csv = NULL, raw = TRUE, confint = NULL, std = FALSE, round = 5, test_random = FALSE, bonferroni = NULL, intext_specific = NULL,
-  print = TRUE, timer = FALSE, debug = FALSE) {
+  print = TRUE, timer = FALSE, debug = FALSE, check_version = TRUE) {
   
   # check for csv
-  if(!is.null(csv)) {
-    if(grepl(".csv", csv)) stop("You have indicated that you want a .csv output. Please ensure your filename (passed to csv argument) DOES NOT have any format ending (including .csv). If you do not want a .csv output, omit the csv argument.")
+  if(!is.null(csv)) if(grepl(".csv", csv)) stop("You have indicated that you want a .csv output. Please ensure your filename (passed to csv argument) DOES NOT have any format ending (including .csv). If you do not want a .csv output, omit the csv argument.")
+  
+  # inform which version of lme4 and lmerTest this is written for
+  if(check_version) {
+    cat("\nNote: This function was written for and tested with lme4 version 1.1-26 and lmerTest version 3.1-3.\n")
+    if(packageVersion("lme4") != "1.1.26") warning("lme4 version does not match")
+    if(packageVersion("lmerTest") != "3.1.3") warning("lmerTest version does not match")
   }
   
+  # start tracking time
   starttime = Sys.time()
   
+  # convert formula to correct format if needed
   if(is.character(formula.lmer)) {formula.lmer = as.formula(formula.lmer)}
   
   # fix for convergence errors
@@ -115,6 +122,7 @@ mlm = function(
   }
   
   # extract random effects and conduct significance testing using lmerTest::rand
+  # !!! NOTE !!! SIG TESTING STILL UNSURE, DO NOT TRUST
   randomeffects = VarCorr(lmer.output) %>% convert.to.data.frame() %>%
     dplyr::filter(is.na(var2)) %>%
     dplyr::mutate(
@@ -122,6 +130,7 @@ mlm = function(
       var = (sdcor * sdcor) %>% round(round),
       .keep = "none")
   if(test_random) {
+    warning("!!! NOTE !!! SIG TESTING FOR RANDOM EFFECTS STILL UNSURE, DO NOT TRUST")
     randomeffects = dplyr::mutate(
       p = c(NA, lmerTest::rand(lmer.output)[2, "Pr(>Chisq)"] %>% round(3), NA),
       sig = sigstars(p)
@@ -150,14 +159,11 @@ mlm = function(
         sig.adj = sigstars(p.adj),
         .keep = "unused"
       )
-  } else {
-    fixedeffects = fixedeffects %>%
-      dplyr::mutate(p.temp = NULL)
-  }
+  } else {fixedeffects = fixedeffects %>% dplyr::mutate(p.temp = NULL)}
   
   # add std coeffs if requested
   if(std) {
-    cat("Standardised coeffs calculated at level 1.\n\n")
+    cat("Standardised coeffs calculated with full data using implementation of 'refit' method from effectsize::standardize_parameters().\n\n")
     if(switch_optimiser | switch_optimiser2) {std.output = lmer(formula.lmer, data = effectsize::standardize(data), REML = REML, control = optSwitch)}
     else {std.output = lmer(formula.lmer, data = effectsize::standardize(data), REML = REML)}
     
@@ -186,7 +192,7 @@ mlm = function(
   
   # extract confints (unstd)
   if(!is.null(confint)) {
-    if(confint == "fixed") {ci.raw = confint(lmer.output, parm = "beta_")}
+    if(confint[1] == "fixed") {ci.raw = confint(lmer.output, parm = "beta_")}
     else {ci.raw = confint(lmer.output, parm = confint, oldNames = FALSE)}
     ci = ci.raw %>%
       convert.to.data.frame() %>%
@@ -203,9 +209,8 @@ mlm = function(
   }
   
   if(debug | print) {
-    print(randomeffects)
-    cat("\n")
-    print(fixedeffects)
+    print(randomeffects); cat("\n")
+    print(fixedeffects); cat("\n")
   }
   
   # prepare output
@@ -214,16 +219,12 @@ mlm = function(
   
   # if user wants to write csv, prepare table and execute accordingly
   if(!is.null(csv)) {
-    for(effect in c("random", "fixed")) {
-      write.csv(out[[effect]], paste0(csv, "_", effect, ".csv", sep = ""), row.names = F)
-    }
+    for(effect in c("random", "fixed")) {write.csv(out[[effect]], paste0(csv, "_", effect, ".csv", sep = ""), row.names = F)}
   }
   
   # if user wants to see intext, print it
   if(!is.null(intext_specific)) {
-    for(variable in intext_specific) {
-      cat(intext_regression(regression.output = out[["fixed"]], varname = variable, round = round), "\n")
-    }
+    for(variable in intext_specific) {cat(intext_regression(regression.output = out[["fixed"]], varname = variable, round = round), "\n")}
   }
   
   endtime = Sys.time()
@@ -240,17 +241,16 @@ mlm.hierarchical = function(
   confint = NULL, std = FALSE, round = 5, bonferroni = NULL, debug = FALSE) {
   
   if(!is.data.frame(data)) stop("Data should be of class data.frame.")
-  if(!is.null(csv)) {
-    if(grepl(".csv", csv)) stop("You have indicated that you want a .csv output. Please ensure your filename (passed to csv argument) DOES NOT have any format ending (including .csv). If you do not want a .csv output, omit the csv argument.")
-  }
+  if(!is.null(csv)) if(grepl(".csv", csv)) stop("You have indicated that you want a .csv output. Please ensure your filename (passed to csv argument) DOES NOT have any format ending (including .csv). If you do not want a .csv output, omit the csv argument.")
   
   if(!is.null(intext_specific)) {
-    for(variable in intext_specific) {
-      if(!(variable %in% confint)) {
-        confint = c(variable, confint)
-      }
-    }
+    for(variable in intext_specific) {if(!(variable %in% confint)) {confint = c(variable, confint)}}
   }
+  
+  # inform which version of lme4 and lmerTest this is written for
+  cat("\nNote: This function was written for and tested with lme4 version 1.1-26 and lmerTest version 3.1-3.\n")
+  if(packageVersion("lme4") != "1.1.26") warning("lme4 version does not match")
+  if(packageVersion("lmerTest") != "3.1.3") warning("lmerTest version does not match")
   
   # get number of models
   num_of_models = length(formulae)
@@ -273,7 +273,7 @@ mlm.hierarchical = function(
       formula.lmer = current_formula, data = data,
       REML = REML, switch_optimiser = switch_optimiser, switch_optimiser2 = switch_optimiser2, csv = NULL,
       confint = confint, std = std, round = round, bonferroni = bonferroni,
-      raw = raw, print = print)
+      raw = raw, print = print, check_version = FALSE)
     
     # relabel columns
     colnames(current_result$random)[-1] = paste0(label, "_", colnames(current_result$random)[-1])
@@ -290,7 +290,9 @@ mlm.hierarchical = function(
   if(viewtable | !is.null(csv)) {
     for(effect in c("random", "fixed")) {
       table_of_outputs = results[[1]][[effect]]
-      for(n in 2:num_of_models) {table_of_outputs = merge(table_of_outputs, results[[n]][[effect]], all = T, sort = F)}
+      if(num_of_models > 1) {
+        for(n in 2:num_of_models) {table_of_outputs = merge(table_of_outputs, results[[n]][[effect]], all = T, sort = F)}
+      }
       if(viewtable) {View(table_of_outputs)}
       if(!is.null(csv)) {write.csv(table_of_outputs, paste0(csv, "_", effect, ".csv", sep = ""), row.names = F)}
     }
@@ -299,10 +301,7 @@ mlm.hierarchical = function(
   # if user wants to see intext, print it
   if(!is.null(intext_specific)) {
     for(variable in intext_specific) {
-      for(n in 1:num_of_models) {
-        res = results[[n]][["fixed"]]
-        cat(intext_regression(regression.output = res, varname = variable, round = round), "\n")
-      }
+      for(n in 1:num_of_models) {cat(intext_regression(regression.output = results[[n]][["fixed"]], varname = variable, round = round), "\n")}
     }
   }
   
