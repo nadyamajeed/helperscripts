@@ -1,9 +1,9 @@
 cat("\n####################")
 cat("\nLoading Nadya's functions and other QOL upgrades from Github.")
-cat("\n            Version : 0.0.4.9000")
-cat("\n       Last updated : 22 Apr 2021, 10:10pm")
+cat("\n            Version : 0.0.5.9000")
+cat("\n       Last updated : 18 May 2021, 12:38am")
 cat("\n Loading Package(s) : dplyr")
-cat("\nRequired Package(s) : haven (for write_double and unhaven functions)")
+cat("\nRequired Package(s) : haven (for write_double and unhaven functions), merTools (for ICC calculation for multilevel datasets)")
 cat("\n          Option(s) : Prevent scientific notation.")
 cat("\n")
 
@@ -20,13 +20,20 @@ options(scipen = 99999)
 
 
 
-descStats = function(varname, label = FALSE, dummy = FALSE, compatible = FALSE) {
+descStats = function(var, data = NULL, label = FALSE, dummy = FALSE, compatible = FALSE, mlm_grouping = NULL, mlm_grouping_report = TRUE) {
   
-  n = sum(!is.na(varname))
+  # check how varvalues was passed -- was it a vector or a colname?
+  if(length(var) != 1) {varvalues = var; mlm_usable = FALSE} # vector
+  else if(length(var) == 1 & is.character(var) & !is.null(data)) {varvalues = data[, var]; mlm_usable = TRUE} # colname
+  else stop("Did you pass in var and data (optional) correctly?")
   
+  # count number of valid observations
+  n = sum(!is.na(varvalues))
+  
+  # for 0/1 variables
   if(dummy) {
-    yes = sum(varname == 1, na.rm = T)
-    no = sum(varname == 0, na.rm = T)
+    yes = sum(varvalues == 1, na.rm = T)
+    no = sum(varvalues == 0, na.rm = T)
     if(yes==0 & no==0) {stop("\nCategorical variables should be dummy-coded in 0/1. Neither found.\n")}
     else {
       percentage = round4(yes / (yes + no)) * 100
@@ -35,32 +42,41 @@ descStats = function(varname, label = FALSE, dummy = FALSE, compatible = FALSE) 
     }
   }
   
+  # for continuous variables
   else {
-    if(!is.numeric(varname)) {stop("\nVariable is not numeric.\nPlease convert the variable, check the variable name, or set categorical = TRUE to compute descriptives for (dummy-coded) categorical variables.\n")}
+    if(!is.numeric(varvalues)) {stop("\nVariable is not numeric.\nPlease convert the variable, check the variable name, or set categorical = TRUE to compute descriptives for (dummy-coded) categorical variables.\n")}
     else {
-      m = mean(varname, na.rm = T) %>% round2()
-      sd = sd(varname, na.rm = T) %>% round2()
-      min = min(varname, na.rm = T) %>% round2()
-      max = max(varname, na.rm = T) %>% round2()
+      m = mean(varvalues, na.rm = T) %>% round2()
+      sd = sd(varvalues, na.rm = T) %>% round2()
+      min = min(varvalues, na.rm = T) %>% round2()
+      max = max(varvalues, na.rm = T) %>% round2()
       out = data.frame('n' = n, 'm' = m, 'sd' = sd, 'min' = min, 'max' = max)
       if(compatible) {out = out %>% dplyr::rename(value = m)}
     }
   }
   
+  # if mlm level 1 data
+  if(!is.null(mlm_grouping)) {
+    if(mlm_grouping_report) catcat("\nYou have indicated that this is level 1 data from a multilevel dataset,\nwith grouping identifier", mlm_grouping, "\nPlease cite merTools for calculation of ICC.\n")
+    if(!mlm_usable) stop("\nArguments not usable in this format. Please pass in var as character and pass in data.\n")
+    out$merToolsICC = merTools::ICC(outcome = var, group = mlm_grouping, data = data) %>% round(2)
+  }
+  
+  # clean up and return
   if(label != FALSE) {rownames(out) = label}
   return(out)
 }
 
 
 
-descStats.full = function(data, exclude = NULL, split = FALSE, print = TRUE, csv = TRUE, csv_name = "descriptives.csv", debug = FALSE) {
+descStats.full = function(data, exclude = NULL, split = FALSE, mlm_grouping = NULL, print = TRUE, csv = TRUE, csv_name = "descriptives.csv", debug = FALSE) {
   
   ##### sub-function to extract descriptives #####
   
   descStats.full.sub = function(data, vars) {
     out = data.frame()
     for(current_var in vars) {
-      
+
       # extract values in column
       current_values = data[, current_var]
       
@@ -79,7 +95,7 @@ descStats.full = function(data, exclude = NULL, split = FALSE, print = TRUE, csv
           if(dummy) {label = paste(current_var, "(%)")}
           
           # run descStats for current variable
-          current_descStats = descStats(current_values, dummy = dummy, compatible = TRUE, label = label)
+          current_descStats = descStats(current_var, data = data, dummy = dummy, compatible = TRUE, label = label, mlm_grouping = mlm_grouping, mlm_grouping_report = FALSE)
           
           # bind back to table of descriptives
           out = rbind(out, current_descStats)
@@ -101,14 +117,18 @@ descStats.full = function(data, exclude = NULL, split = FALSE, print = TRUE, csv
   
   # exclude variables if requested
   if(!is.null(exclude)) {
-    exclusions = data %>% dplyr::select(contains(exclude)) %>% colnames()
+    exclusions = data %>% dplyr::select((starts_with(exclude) & ends_with(exclude))) %>% colnames()
     cat("Excluding the following columns:", exclusions, "\n")
-    data = data %>% dplyr::select(-contains(exclude))
+    data = data %>% dplyr::select(-(starts_with(exclude) & ends_with(exclude)))
   }
   
   # retrieve colnames
   vars = colnames(data)
   if(debug) {print(vars)}
+  
+  # if mlm, report and remove the grouping col from cols to calculate
+  if(!is.null(mlm_grouping)) {cat("\nYou have indicated that this is level 1 data from a multilevel dataset,\nwith grouping identifier", mlm_grouping, "\nPlease cite merTools for calculation of ICC.\n")}
+  vars = vars[!grepl(mlm_grouping, vars)]
   
   # extract desc stats
   if(split == FALSE) {out = descStats.full.sub(data = data, vars = vars)}
