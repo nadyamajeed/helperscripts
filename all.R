@@ -127,8 +127,10 @@ descStats.full = function(data, exclude = NULL, split = FALSE, mlm_grouping = NU
   if(debug) {print(vars)}
   
   # if mlm, report and remove the grouping col from cols to calculate
-  if(!is.null(mlm_grouping)) {cat("\nYou have indicated that this is level 1 data from a multilevel dataset,\nwith grouping identifier", mlm_grouping, "\nPlease cite merTools for calculation of ICC.\n")}
-  vars = vars[!grepl(mlm_grouping, vars)]
+  if(!is.null(mlm_grouping)) {
+    cat("\nYou have indicated that this is level 1 data from a multilevel dataset,\nwith grouping identifier", mlm_grouping, "\nPlease cite merTools for calculation of ICC.\n")
+    vars = vars[!grepl(mlm_grouping, vars)]
+  }
   
   # extract desc stats
   if(split == FALSE) {out = descStats.full.sub(data = data, vars = vars)}
