@@ -5,8 +5,8 @@ devtools::source_url("https://raw.githubusercontent.com/nadyamajeed/helperscript
 
 cat("\n####################")
 cat("\nLoading Nadya's multilevel modelling upgrades from Github.")
-cat("\n            Version : 0.0.2.9003 (for R version 3.6.3)")
-cat("\n        Last update : 30 Apr 2021, 3:11am")
+cat("\n            Version : 0.0.3.9000 (for R version 3.6.3)")
+cat("\n        Last update : 18 May 2021, 3:21am")
 cat("\n Loading Package(s) : lme4 (written for 1.1-26), lmerTest (written for 3.1-3)")
 cat("\nRequired Package(s) : effectsize (std coeffs), psych and purrr (repeated alphas)")
 cat("\n")
@@ -148,6 +148,7 @@ mlm = function(
       p = `Pr(>|t|)` %>% round(3),
       sig = sigstars(p),
       p.temp = `Pr(>|t|)`,
+      ratio_effsize = (Estimate / `Std. Error`) %>% round(round),
       .keep = "none"
     )
   
