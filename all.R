@@ -1,7 +1,7 @@
 cat("\n####################")
 cat("\nLoading Nadya's functions and other QOL upgrades from Github.")
-cat("\n            Version : 0.0.5.9001")
-cat("\n       Last updated : 18 May 2021, 12:40am")
+cat("\n            Version : 0.0.5.9002")
+cat("\n       Last updated : 18 May 2021, 1:12am")
 cat("\n Loading Package(s) : dplyr")
 cat("\nRequired Package(s) : haven (for write_double and unhaven functions), merTools (for ICC calculation for multilevel datasets)")
 cat("\n          Option(s) : Prevent scientific notation.")
@@ -324,7 +324,7 @@ better_cormatrix = function(data, first = NULL, include = NULL, exclude = NULL, 
   if(!is.null(include)) if(length(include) < 2) stop("Too few columns in include.")
   if(!is.null(include) & !is.null(exclude)) stop("Can't have both include and exclude arguments. Omit one.")
   if(!is.null(csv_name)) if(!grepl(".csv", csv_name)) stop("Ensure csv_name ends in .csv. If you do not want a csv, leave this argument blank.")
-  if((length(pval_output) > 1) | !(pval_output %in% c("star", "matrix", "none"))) {pval_output = pval_output[1]; warning("pval_output not specified or invalid. Using star output")}
+  if((length(pval_output) > 1) | !(pval_output[1] %in% c("star", "matrix", "none"))) {pval_output = pval_output[1]; warning("pval_output not specified or invalid. Using star output.")}
   
   # reorder variables if needed
   if(is.null(first)) {d.zoc = data} else {d.zoc = data %>% dplyr::select(first, everything())}
@@ -379,8 +379,8 @@ better_cormatrix = function(data, first = NULL, include = NULL, exclude = NULL, 
   
   # write matrix to csv if asked for
   if(!is.null(csv_name)) {
-    write.csv(cormatrix, csvname, row.names = T)
-    if(pval_output == "matrix") write.csv(pmatrix, paste0("pvals_", csvname), row.names = T)
+    write.csv(cormatrix, csv_name, row.names = T)
+    if(pval_output == "matrix") write.csv(pmatrix, paste0("pvals_", csv_name), row.names = T)
   }
   
   # return cormatrix
