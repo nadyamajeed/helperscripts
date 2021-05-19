@@ -2,8 +2,8 @@
 
 cat("\n####################")
 cat("\nLoading Nadya's in-text support for regressions from Github.")
-cat("\n    Version : 0.0.1.9001 (for R version 3.6.3)")
-cat("\nLast update : 23 Dec 2020, 6:57am")
+cat("\n    Version : 0.0.1.9002 (for R version 3.6.3)")
+cat("\nLast update : 19 May 2021, 5:19pm")
 cat("\n")
 
 library(dplyr)
@@ -27,7 +27,7 @@ intext_regression <- function(
     add_beta = TRUE, add_ci = TRUE, add_intercept = FALSE) {
     
     res = regression.output
-    if(ncol(res) == 7) {
+    if(!("stdcoeff" %in% colnames(res))) {
       # there is no beta column
       add_beta = FALSE
       res = res %>% dplyr::mutate(betaholder = NA) %>% dplyr::select(variable, betaholder, everything())
@@ -59,14 +59,14 @@ intext_regression <- function(
     
     # check for std coeff
     if(add_beta) {
-      beta = res[rownum, 2] %>% forceround(dp = round) %>% trimws()
+      beta = res[rownum, "stdcoeff"] %>% forceround(dp = round) %>% trimws()
       beta_info = paste0("β = ", beta, ", ", sep = "")
     }
     else {beta_info = ""}
     
     # get b and se
-    b = res[rownum, 3] %>% forceround(dp = round) %>% trimws()
-    se = res[rownum, 4] %>% forceround(dp = round) %>% trimws()
+    b = res[rownum, "coeff"] %>% forceround(dp = round) %>% trimws()
+    se = res[rownum, "se"] %>% forceround(dp = round) %>% trimws()
     bs = intext_regCoeffs(b, se)
     
     # get ci
@@ -76,20 +76,20 @@ intext_regression <- function(
         ci95 = ""
       }
       else {
-        ci95 = res[rownum, c(7, 8)] %>% forceround(dp = round) %>% trimws()
+        ci95 = res[rownum, c("CI95lower", "CI95upper")] %>% forceround(dp = round) %>% trimws()
         ci95 = paste0(intext_CI(ci95[1], ci95[2]), ", ", sep = "")
       }
     }
     else {ci95 = ""}
     
     # get pval
-    pval = res[rownum, 5]
+    pval = res[rownum, "p"]; if(length(pval) == 0) pval = res[rownum, "pval"]
     psegment = intext_p(pval)
     
     # get intercept (used for simple slopes context)
     if(add_intercept) {
       intercept_row = match("(Intercept)", res$variable)
-      intercept_value = res[intercept_row, 3] %>% forceround(dp = round) %>% trimws()
+      intercept_value = res[intercept_row, "coeff"] %>% forceround(dp = round) %>% trimws()
       intercept_info = paste0(", intercept = ", intercept_value, sep = "")
     }
     else {intercept_info = ""}
