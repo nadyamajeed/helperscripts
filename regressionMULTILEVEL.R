@@ -5,8 +5,8 @@ devtools::source_url("https://raw.githubusercontent.com/nadyamajeed/helperscript
 
 cat("\n####################")
 cat("\nLoading Nadya's multilevel modelling upgrades from Github.")
-cat("\n            Version : 0.0.3.9000 (for R version 3.6.3)")
-cat("\n        Last update : 18 May 2021, 3:21am")
+cat("\n            Version : 0.0.3.9001 (for R version 3.6.3)")
+cat("\n        Last update : 19 May 2021, 5:40pm")
 cat("\n Loading Package(s) : lme4 (written for 1.1-26), lmerTest (written for 3.1-3)")
 cat("\nRequired Package(s) : effectsize (std coeffs), psych and purrr (repeated alphas)")
 cat("\n")
@@ -160,7 +160,7 @@ mlm = function(
         sig.adj = sigstars(p.adj),
         .keep = "unused"
       )
-  } else {fixedeffects = fixedeffects %>% dplyr::mutate(p.temp = NULL)}
+  } else {fixedeffects$p.temp = NULL}
   
   # add std coeffs if requested
   if(std) {
@@ -192,6 +192,9 @@ mlm = function(
   }
   
   # extract confints (unstd)
+  if(!is.null(intext_specific)) {
+    for(variable in intext_specific) {if(!(variable %in% confint)) {confint = c(variable, confint)}}
+  }
   if(!is.null(confint)) {
     if(confint[1] == "fixed") {ci.raw = confint(lmer.output, parm = "beta_")}
     else {ci.raw = confint(lmer.output, parm = confint, oldNames = FALSE)}
@@ -302,7 +305,12 @@ mlm.hierarchical = function(
   # if user wants to see intext, print it
   if(!is.null(intext_specific)) {
     for(variable in intext_specific) {
-      for(n in 1:num_of_models) {cat(intext_regression(regression.output = results[[n]][["fixed"]], varname = variable, round = round), "\n")}
+      for(n in 1:num_of_models) {
+        current_fixed_efects = results[[n]][["fixed"]]
+        colnames(current_fixed_efects) = gsub(".*_", "", colnames(current_fixed_efects)) 
+        if(debug) print(current_fixed_efects)
+        cat(intext_regression(regression.output = current_fixed_efects, varname = variable, round = round), "\n")
+      }
     }
   }
   
