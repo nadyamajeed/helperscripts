@@ -1,10 +1,12 @@
 cat("\n####################")
 cat("\nLoading Nadya's functions and other QOL upgrades from Github.")
-cat("\n            Version : 0.0.5.9002")
-cat("\n       Last updated : 18 May 2021, 1:12am")
+cat("\n            Version : 0.0.6.9000")
+cat("\n       Last updated : 23 May 2021, 7:32am")
 cat("\n Loading Package(s) : dplyr")
-cat("\nRequired Package(s) : haven (for write_double and unhaven functions), merTools (for ICC calculation for multilevel datasets)")
-cat("\n          Option(s) : Prevent scientific notation.")
+cat("\nRequired Package(s) : e1071 (skewness in descriptives functions)")
+cat("\n                      haven (write_double and unhaven functions)")
+(cat"\n                      merTools (ICC calculation for multilevel datasets)")
+cat("\n          Option(s) : Prevent scientific notation")
 cat("\n")
 
 starttime = Sys.time()
@@ -20,7 +22,7 @@ options(scipen = 99999)
 
 
 
-descStats = function(var, data = NULL, label = FALSE, dummy = FALSE, compatible = FALSE, mlm_grouping = NULL, mlm_grouping_report = TRUE) {
+descStats = function(var, data = NULL, label = FALSE, dummy = FALSE, compatible = FALSE, skewness = TRUE, mlm_grouping = NULL, mlm_grouping_report = TRUE) {
   
   # check how varvalues was passed -- was it a vector or a colname?
   if(length(var) != 1) {varvalues = var; mlm_usable = FALSE} # vector
@@ -50,7 +52,8 @@ descStats = function(var, data = NULL, label = FALSE, dummy = FALSE, compatible 
       sd = sd(varvalues, na.rm = T) %>% round2()
       min = min(varvalues, na.rm = T) %>% round2()
       max = max(varvalues, na.rm = T) %>% round2()
-      out = data.frame('n' = n, 'm' = m, 'sd' = sd, 'min' = min, 'max' = max)
+      skew = e1071::skewness(varvalues, na.rm = T) %>% round2()
+      out = data.frame('n' = n, 'm' = m, 'sd' = sd, 'min' = min, 'max' = max, 'skew' = skew)
       if(compatible) {out = out %>% dplyr::rename(value = m)}
     }
   }
@@ -76,7 +79,7 @@ descStats.full = function(data, exclude = NULL, split = FALSE, mlm_grouping = NU
   descStats.full.sub = function(data, vars) {
     out = data.frame()
     for(current_var in vars) {
-
+      
       # extract values in column
       current_values = data[, current_var]
       
