@@ -1,7 +1,7 @@
 cat("\n####################")
 cat("\nLoading Nadya's functions and other QOL upgrades from Github.")
-cat("\n            Version : 0.0.6.9001")
-cat("\n       Last updated : 23 May 2021, 8:33am")
+cat("\n            Version : 0.0.6.9002")
+cat("\n       Last updated : 23 May 2021, 8:46am")
 cat("\n Loading Package(s) : dplyr")
 cat("\nRequired Package(s) : e1071 (skewness in descriptives functions)")
 cat("\n                      haven (write_double and unhaven functions)")
@@ -40,7 +40,7 @@ descStats = function(var, data = NULL, label = FALSE, dummy = FALSE, compatible 
     else {
       percentage = round4(yes / (yes + no)) * 100
       if(!compatible) {out = data.frame('n' = n, 'percentage' = percentage)}
-      if(compatible) {out = data.frame('n' = n, 'value' = percentage, 'sd' = NA, 'min' = NA, 'max' = NA)}
+      if(compatible) {out = data.frame('n' = n, 'value' = percentage, 'sd' = NA, 'min' = NA, 'max' = NA, 'skew' = NA)}
     }
   }
   
