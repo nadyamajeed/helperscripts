@@ -77,10 +77,10 @@ intext_regression = function(
       }
       else {
         ci95 = res[rownum, c("CI95lower", "CI95upper")] %>% forceround(dp = round_ci) %>% trimws()
-        while(ci95[1] == 0 | ci95[2] == 0) {
+        while(as.numeric(ci95[1]) == 0 | as.numeric(ci95[2]) == 0) {
           round_ci = round_ci + 1
           ci95 = res[rownum, c("CI95lower", "CI95upper")] %>% forceround(dp = round_ci) %>% trimws()
-          }
+        }
         ci95 = paste0(intext_CI(ci95[1], ci95[2]), ", ", sep = "")
       }
     }
