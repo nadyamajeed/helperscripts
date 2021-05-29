@@ -2,8 +2,8 @@
 
 cat("\n####################")
 cat("\nLoading Nadya's in-text support for regressions from Github.")
-cat("\n    Version : 0.0.1.9002 (for R version 3.6.3)")
-cat("\nLast update : 19 May 2021, 5:19pm")
+cat("\n    Version : 0.0.1.9003 (for R version 3.6.3)")
+cat("\nLast update : 30 May 2021, 6:14am")
 cat("\n")
 
 library(dplyr)
@@ -12,18 +12,18 @@ library(dplyr)
 
 
 
-intext_regression <- function(
-  regression.output, varname = NULL, round = 2,
+intext_regression = function(
+  regression.output, varname = NULL, round = 2, round_ci = round,
   add_beta = TRUE, add_ci = TRUE, add_intercept = FALSE) {
   
   ##### sub-functions #####
   
-  intext_regCoeffs <- function(b, se) {return(paste0("b = ", b, ", SE = ", se, sep = ""))}
+  intext_regCoeffs = function(b, se) {return(paste0("b = ", b, ", SE = ", se, sep = ""))}
   
-  intext_CI <- function(cilower, ciupper) {return(ci = paste0("95% CI = [", cilower, ", ", ciupper, "]", sep = ""))}
+  intext_CI = function(cilower, ciupper) {return(ci = paste0("95% CI = [", cilower, ", ", ciupper, "]", sep = ""))}
   
-  intext_regression_single <- function(
-    regression.output, varname = NULL, round = 2,
+  intext_regression_single = function(
+    regression.output, varname = NULL, round = 2, round_ci = round,
     add_beta = TRUE, add_ci = TRUE, add_intercept = FALSE) {
     
     res = regression.output
@@ -76,7 +76,11 @@ intext_regression <- function(
         ci95 = ""
       }
       else {
-        ci95 = res[rownum, c("CI95lower", "CI95upper")] %>% forceround(dp = round) %>% trimws()
+        ci95 = res[rownum, c("CI95lower", "CI95upper")] %>% forceround(dp = round_ci) %>% trimws()
+        while(ci95[1] == 0 | ci95[2] == 0) {
+          round_ci = round_ci + 1
+          ci95 = res[rownum, c("CI95lower", "CI95upper")] %>% forceround(dp = round_ci) %>% trimws()
+          }
         ci95 = paste0(intext_CI(ci95[1], ci95[2]), ", ", sep = "")
       }
     }
