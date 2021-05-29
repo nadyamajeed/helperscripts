@@ -202,8 +202,8 @@ mlm = function(
       convert.to.data.frame() %>%
       dplyr::mutate(
         variable = rownames(.),
-        CI95lower = `2.5 %` %>% round(round),
-        CI95upper = `97.5 %` %>% round(round),
+        CI95lower = `2.5 %` %>% round(5),
+        CI95upper = `97.5 %` %>% round(5),
         .keep = 'none'
       )
     # add to fixed effects table and undo reordering
