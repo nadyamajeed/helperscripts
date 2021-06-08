@@ -5,8 +5,8 @@ devtools::source_url("https://raw.githubusercontent.com/nadyamajeed/helperscript
 
 cat("\n####################")
 cat("\nLoading Nadya's linear regression upgrades (with Amelia and mice+mitml support) from Github.")
-cat("\n            Version : 0.0.1.9003 (for R version 3.6.3)")
-cat("\n        Last update : 23 Dec 2020, 7:02am")
+cat("\n            Version : 0.0.1.9004 (for R version 3.6.3)")
+cat("\n        Last update : 9 Jun 2021, 2:04am")
 cat("\n Loading Package(s) : tidyverse")
 cat("\nRequired Package(s) : broom, car, effectsize, lm.beta, purrr")
 cat("\n")
@@ -390,7 +390,9 @@ regression.hierarchical <- function(
   if(intext) {
     for(n in 1:num_of_models) {
       cat("\nModel", n, "\n")
-      intexts = intext_regression(regression.output = results[[n]], varname = intext_specific)
+      curr = results[[n]]
+      colnames(curr) = gsub(".*_", "", colnames(curr)) 
+      intexts = intext_regression(regression.output = curr, varname = intext_specific)
       for(i in intexts) {cat(i, "\n")}
     }
   }
