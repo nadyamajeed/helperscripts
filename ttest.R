@@ -4,8 +4,8 @@ devtools::source_url("https://raw.githubusercontent.com/nadyamajeed/helperscript
 
 cat("\n####################")
 cat("\nLoading Nadya's t-test upgrades (with Bayesian t-test!) from Github.")
-cat("\n            Version : 0.0.3.9000")
-cat("\n        Last update : 27 Jun 2021, 11:14pm")
+cat("\n            Version : 0.0.3.9001")
+cat("\n        Last update : 1 Jul 2021, 4:55am")
 cat("\nRequired Package(s) : BayesFactor (0.9.12-4.2), effectsize (0.4.5)")
 cat("\n")
 
@@ -90,9 +90,9 @@ ttestFNB = function(
   
   if(print) {
     cat("\n")
-    cat("Groups:", iv_levels, "\n")
-    cat("M (SD) in first group : ", table_out$m1, " (", table_out$sd1, ")\n", sep = "")
-    cat("M (SD) in second group: ", table_out$m2, " (", table_out$sd2, ")\n", sep = "")
+    cat("First group is ", levels(iv_values)[1], " (M = ", table_out$m1, ", SD = ", table_out$sd1, ")\n", sep = "")
+    cat("Second group is ", levels(iv_values)[2], " (M = ", table_out$m2, ", SD = ", table_out$sd2, ")\n", sep = "")
+    cat("\n")
     print(cohensd)
   }
   if(viewtable) {View(table_out)}
