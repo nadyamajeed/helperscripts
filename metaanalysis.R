@@ -4,7 +4,7 @@ devtools::source_url("https://raw.githubusercontent.com/nadyamajeed/helperscript
 
 cat("\n####################")
 cat("\nLoading Nadya's meta-analysis upgrades from Github.")
-cat("\Version    : 14 Apr 2022, 5:30 PM")
+cat("\nVersion    : 14 Apr 2022, 5:30 PM")
 cat("\nPackage(s): metafor (written for 3.0-2)")
 cat("\n")
 
